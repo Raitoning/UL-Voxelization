@@ -28,9 +28,9 @@ To compile the project, you will need to:
 2. Make a `build` folder in the cloned repository.
 3. Run `cmake ..` in the `build` directory.
 4. Run `make`.
-5. Run `./display3D [file.off]` to launch the executable.
+5. Run `./display3D file.off` to launch the executable.
 
-If everything went fine, a window should open with a 3D bunny inside (or the file you chose). You can interact with it using the mouse and keyboard. Use the F1 key to open an help window with some keyboard/mouse actions.
+If everything went fine, a window should open with a 3D bunny inside (or the file you chose). You can interact with it using the mouse and keyboard. Use the H key to open an help window with some keyboard/mouse actions.
 
 In the near future, you will be able to choose what kind of voxelisation you want between Gaussian (1 voxel each unit) and a Resolution based one (128x128x128, 256x256x256, ...).
 
@@ -38,7 +38,7 @@ In the near future, you will be able to choose what kind of voxelisation you wan
 
 The roadmap will be updated as the project progress and the tasks are assigned by our teacher.
 
-- [ ] Installing DGtal on our machines (Ongoing 1/3).
+- [X] Installing DGtal on our machines.
 - [ ] Perform a Gaussian voxelization of a 3D model (1 voxel every unit.)
 - [ ] Perform a resolution based voxelization (ie 512x512x512 for example.)
 - [ ] (Bonus) Implement the voxelization on a GPU (API to be chosen).
