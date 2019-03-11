@@ -15,9 +15,17 @@ using namespace DGtal;
 // TODO: Equations plane & lines
 // TODO: Intersections
 // TODO: Vector vertices / faces & display
-// TODO: Direction
+// TODO: Test -> Direction
 // TODO: Resolution
 // TODO: Unit tests
+
+// Direction Vector from 2 points (A->B)
+
+//Viewer3D<>::RealPoint directionVector(Viewer3D<>::RealPoint a,
+//                                      Viewer3D<>::RealPoint b) {
+//  Viewer3D<>::RealPoint s = b-a;
+//  return s;
+//}
 
 // Möller-Trumborne algorithm
 bool RayIntersectsTriangle(Viewer3D<>::RealPoint rayOrigin,
