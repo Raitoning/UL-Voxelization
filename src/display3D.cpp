@@ -8,6 +8,8 @@
 #include <DGtal/io/readers/MeshReader.h>
 #include <DGtal/io/viewers/Viewer3D.h>
 
+#define LOG(X) std::cout << X << std::endl
+
 using namespace DGtal;
 
 // TODO: Gaussian voxelization
@@ -92,11 +94,23 @@ int main(int argc, char **argv)
     // File name of the mesh to import.
     std::string inputFile;
 
+    // Define if the voxelisation will be Gaussian or resolution based.
+    bool gaussian = true;
+
+    // Resolution on the X axis.
+    int horizontalResolution;
+
+    // Resolution on the Y axis.
+    int verticalResolution;
+
+    // Resolution on the Z axis.
+    int forwardResolution;
+
     // Checking the arguments.
     // If there isn't a file name as argument, stop the execution.
-    if (argc != 2)
+    if (argc != 2 && argc != 5)
     {
-        trace.info() << "Usage: display3D file" << std::endl
+        trace.info() << "Usage: display3D file [hres] [vres] [zres]" << std::endl
                      << "Now exiting..." << std::endl;
 
         return 0;
@@ -106,6 +120,16 @@ int main(int argc, char **argv)
         // Get the file name to import the mesh.
         inputFile = argv[1];
         trace.info() << "Input file: " << inputFile << std::endl;
+    }
+
+    if (argc == 5)
+    {
+        horizontalResolution = atoi(argv[2]);
+        verticalResolution = atoi(argv[3]);
+        forwardResolution = atoi(argv[4]);
+        gaussian = false;
+
+        LOG("X, Y, Z:" << horizontalResolution << " " << verticalResolution << " " << forwardResolution);
     }
 
     // qT Application hosting the viewer.
@@ -156,6 +180,76 @@ int main(int argc, char **argv)
     Z3i::RealPoint rayOrigin((minBoundingBox[0] + maxBoundingBox[0]) / 2, minBoundingBox[1] - 1, (minBoundingBox[2] + maxBoundingBox[2]) / 2);
     Z3i::RealPoint rayDirection(0, 1, 0);
     Z3i::RealPoint intersection;
+
+    float xStep = ((maxBoundingBox[0] - minBoundingBox[0]) / horizontalResolution);
+    float yStep = ((maxBoundingBox[1] - minBoundingBox[2]) / verticalResolution);
+    float zStep = ((maxBoundingBox[2] - minBoundingBox[2]) / forwardResolution);
+
+    if (!gaussian)
+    {
+        // Raytracing from under.
+        rayDirection = Z3i::RealPoint(0, 1, 0);
+
+        for (float x = minBoundingBox[0]; x < maxBoundingBox[0]; x += xStep)
+        {
+            for (float z = minBoundingBox[2]; z < maxBoundingBox[2]; z += zStep)
+            {
+                Z3i::RealPoint rayOrigin(x, minBoundingBox[1] - 1, z);
+                // Test if the test ray can intersect anything.
+                for (int i = 0; i < mesh.nbFaces(); i++)
+                {
+                    // If a face is intersected, set it's color to red.
+                    if (RayIntersectsTriangle(rayOrigin, rayDirection, mesh.getVertex(mesh.getFace(i)[0]), mesh.getVertex(mesh.getFace(i)[1]), mesh.getVertex(mesh.getFace(i)[2]), intersection))
+                    {
+                        mesh.setFaceColor(i, Color(255, 0, 0));
+                        trace.info() << "Intersection at: (" << intersection[0] << "," << intersection[1] << "," << intersection[2] << ")" << std::endl;
+                    }
+                }
+            }
+        }
+
+        // Raytracing from in front of.
+        rayDirection = Z3i::RealPoint(0, 0, -1);
+
+        for (float x = minBoundingBox[0]; x < maxBoundingBox[0]; x += xStep)
+        {
+            for (float y = minBoundingBox[1]; y < maxBoundingBox[1]; y += yStep)
+            {
+                Z3i::RealPoint rayOrigin(x, y, minBoundingBox[2] + 1);
+                // Test if the test ray can intersect anything.
+                for (int i = 0; i < mesh.nbFaces(); i++)
+                {
+                    // If a face is intersected, set it's color to red.
+                    if (RayIntersectsTriangle(rayOrigin, rayDirection, mesh.getVertex(mesh.getFace(i)[0]), mesh.getVertex(mesh.getFace(i)[1]), mesh.getVertex(mesh.getFace(i)[2]), intersection))
+                    {
+                        mesh.setFaceColor(i, Color(255, 0, 0));
+                        trace.info() << "Intersection at: (" << intersection[0] << "," << intersection[1] << "," << intersection[2] << ")" << std::endl;
+                    }
+                }
+            }
+        }
+
+        // Raytracing from the left.
+        rayDirection = Z3i::RealPoint(1, 0, 0);
+
+        for (float y = minBoundingBox[1]; y < maxBoundingBox[1]; y += yStep)
+        {
+            for (float z = minBoundingBox[2]; z < maxBoundingBox[2]; z += zStep)
+            {
+                Z3i::RealPoint rayOrigin(minBoundingBox[0] - 1, y, z);
+                // Test if the test ray can intersect anything.
+                for (int i = 0; i < mesh.nbFaces(); i++)
+                {
+                    // If a face is intersected, set it's color to red.
+                    if (RayIntersectsTriangle(rayOrigin, rayDirection, mesh.getVertex(mesh.getFace(i)[0]), mesh.getVertex(mesh.getFace(i)[1]), mesh.getVertex(mesh.getFace(i)[2]), intersection))
+                    {
+                        mesh.setFaceColor(i, Color(255, 0, 0));
+                        trace.info() << "Intersection at: (" << intersection[0] << "," << intersection[1] << "," << intersection[2] << ")" << std::endl;
+                    }
+                }
+            }
+        }
+    }
 
     // Test if the test ray can intersect anything.
     for (int i = 0; i < mesh.nbFaces(); i++)
