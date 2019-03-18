@@ -29,6 +29,42 @@ using namespace DGtal;
 //  return s;
 //}
 
+int DisplayBoundingBox(Viewer3D<> &view, Viewer3D<>::RealPoint min,
+                                         Viewer3D<>::RealPoint max) {
+    Viewer3D<>::RealPoint A = max;
+    A[0] = min[0]; 
+    Viewer3D<>::RealPoint B = max;
+    
+    Viewer3D<>::RealPoint C =max;
+    C[2] = min[2];
+    Viewer3D<>::RealPoint D =min;
+    D[1] = max[1];
+    Viewer3D<>::RealPoint E =min;
+    
+    Viewer3D<>::RealPoint F =min;
+    F[0] = max[0];
+    Viewer3D<>::RealPoint G =max;
+    G[1] = min[1];
+    Viewer3D<>::RealPoint H =min;
+    H[2] = max[2];
+    
+    view.addLine(A,B,0.05);
+    view.addLine(B,C,0.05);
+    view.addLine(C,D,0.05);
+    view.addLine(D,A,0.05);
+    view.addLine(H,E,0.05);
+    view.addLine(E,F,0.05);
+    view.addLine(F,G,0.05);
+    view.addLine(G,H,0.05);
+    view.addLine(A,H,0.05);
+    view.addLine(D,E,0.05);
+    view.addLine(C,F,0.05);
+    view.addLine(B,G,0.05);
+    
+    return 0;
+    
+}
+
 // Möller-Trumborne algorithm
 // bool RayIntersectsTriangle(Viewer3D<>::RealPoint rayOrigin,
 //                            Viewer3D<>::RealPoint rayVector,
@@ -211,13 +247,8 @@ int main(int argc, char **argv)
     // mesh.changeScale(100);
 
     // Getting the bounding box.
-    std::pair<Viewer3D<>::RealPoint, Viewer3D<>::RealPoint> boundingBox = mesh.getBoundingBox();
-    Z3i::RealPoint minBoundingBox = boundingBox.first;
-    Z3i::RealPoint maxBoundingBox = boundingBox.second;
-
-    // Drawing a domain based on the bouding box.
-    // Z3i::Domain domain(minBoundingBox, maxBoundingBox);
-    // viewer << domain;
+    std::pair<Viewer3D<>::RealPoint, Viewer3D<>::RealPoint> boundingBox = mesh.getBoundingBox();  
+    DisplayBoundingBox(viewer, boundingBox.first, boundingBox.second);
 
     trace.info() << "Bounding box: " << std::endl
                  << boundingBox.first << std::endl
