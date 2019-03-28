@@ -293,8 +293,28 @@ int main(int argc, char **argv)
         // rayDirection = Z3i::RealPoint(1, 0, 0);
 
         // NOTE: ray tangent to a vertex
-        rayOrigin = Z3i::RealPoint(-1, 0.5, 0);
-        rayDirection = Z3i::RealPoint(1, 0, 0);
+        // rayOrigin = Z3i::RealPoint(-1, 0.5, 0);
+        // rayDirection = Z3i::RealPoint(1, 0, 0);
+
+        // NOTE: ray orthogonal to the edge of 2 triangles
+        // rayOrigin = Z3i::RealPoint(0, 0, 1);
+        // rayDirection = Z3i::RealPoint(0, 0, -1);
+
+        // NOTE: ray tangent to the edge of 2 triangles
+        // rayOrigin = Z3i::RealPoint(0, -1, 0);
+        // rayDirection = Z3i::RealPoint(0, 1, 0);
+
+        // NOTE: ray tangent to the edge of 2 triangles
+        // rayOrigin = Z3i::RealPoint(-1, 0.5, 0);
+        // rayDirection = Z3i::RealPoint(1, 0, 0);
+
+        // NOTE: ray orthogonal to the edge of 2 triangles
+        // rayOrigin = Z3i::RealPoint(0, 0.5, 1);
+        // rayDirection = Z3i::RealPoint(0, 0, -1);
+
+        // NOTE: ray not hitting anything
+        rayOrigin = Z3i::RealPoint(0.5, 0.5, 0.5);
+        rayDirection = Z3i::RealPoint(0, 0, -1);
 
         intersectionPoints.push_back(rayOrigin);
         intersectionPoints.push_back(rayOrigin + rayDirection * 3);
