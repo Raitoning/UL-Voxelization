@@ -40,5 +40,5 @@ The roadmap will be updated as the project progress and the tasks are assigned b
 
 - [X] Installing DGtal on our machines.
 - [ ] Perform a Gaussian voxelization of a 3D model (1 voxel every unit.)
-- [ ] Perform a resolution based voxelization (ie 512x512x512 for example.)
+- [X] Perform a resolution based voxelization (ie 512x512x512 for example.)
 - [ ] (Bonus) Implement the voxelization on a GPU (API to be chosen).
