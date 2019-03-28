@@ -17,6 +17,29 @@ using namespace DGtal;
 // TODO: Vector vertices / faces & display
 // TODO: Test -> Direction
 
+Viewer3D<>::RealPoint planDirection(Viewer3D<>::RealPoint a, Viewer3D<>::RealPoint b,
+                       Viewer3D<>::RealPoint c){
+  Viewer3D<>::RealPoint u = b - a;
+  Viewer3D<>::RealPoint v = c - a;
+  
+  
+  // A x, B y, C z du plan.
+  float mA = u[1]*v[2] - u[2]*v[1];
+  float mB = u[2]*v[0] - u[0]*v[2];
+  float mC = u[0]*v[1] - u[1]*v[0];
+  
+  float mD = -(mA*a[0] + mB*a[1] + mC*a[2]);
+  
+  Viewer3D<>::RealPoint d = a;
+  
+  d[0] = mA;
+  d[1] = mB;
+  d[2] = mC;
+
+  return d;
+
+}
+
 int DisplayBoundingBox(Viewer3D<> &view, Viewer3D<>::RealPoint min,
                        Viewer3D<>::RealPoint max)
 {
