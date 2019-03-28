@@ -16,8 +16,6 @@ using namespace DGtal;
 // TODO: Equations plane & lines
 // TODO: Vector vertices / faces & display
 // TODO: Test -> Direction
-// TODO: Resolution
-// TODO: Unit tests
 
 int DisplayBoundingBox(Viewer3D<> &view, Viewer3D<>::RealPoint min,
                        Viewer3D<>::RealPoint max)
@@ -188,11 +186,6 @@ int main(int argc, char **argv)
                  << boundingBox.first << std::endl
                  << boundingBox.second << std::endl;
 
-    // Creating a single test ray from below,
-    // At the center of the bounding box,
-    // And facing upwards.
-    Z3i::RealPoint rayOrigin((boundingBox.second[0] + boundingBox.first[0]) / 2, boundingBox.first[1] - 1, (boundingBox.first[2] + boundingBox.first[2]) / 2);
-    Z3i::RealPoint rayDirection(0, 1, 0);
     Z3i::RealPoint intersection;
 
     float xStep = ((boundingBox.second[0] - boundingBox.first[0]) / float(horizontalResolution - 1));
@@ -202,7 +195,7 @@ int main(int argc, char **argv)
     if (!gaussian)
     {
         // Raytracing from under.
-        rayDirection = Z3i::RealPoint(0, 1, 0);
+        Z3i::RealPoint rayDirection = Z3i::RealPoint(0, 1, 0);
 
         LOG("Min bbox:" << boundingBox.first[0] << " " << boundingBox.first[1] << " " << boundingBox.first[2]);
         LOG("Max bbox:" << boundingBox.second[0] << " " << boundingBox.second[1] << " " << boundingBox.second[2]);
@@ -282,6 +275,29 @@ int main(int argc, char **argv)
     {
         // Gaussian voxelization
         // TODO: Do the actual voxelization after unit tests
+
+        // NOTE: Unit tests
+        Z3i::RealPoint rayOrigin;
+        Z3i::RealPoint rayDirection;
+
+        // NOTE: ray orthogonal to a face
+        // rayOrigin = Z3i::RealPoint(0, 0, 1);
+        // rayDirection = Z3i::RealPoint(0, 0, -1);
+
+        // NOTE: ray orthogonal to an edge
+        // rayOrigin = Z3i::RealPoint(0, -0.5, 0);
+        // rayDirection = Z3i::RealPoint(0, 0, -1);
+
+        // NOTE: ray tangent to an edge
+        // rayOrigin = Z3i::RealPoint(-1, -0.5, 0);
+        // rayDirection = Z3i::RealPoint(1, 0, 0);
+
+        // NOTE: ray tangent to a vertex
+        rayOrigin = Z3i::RealPoint(-1, 0.5, 0);
+        rayDirection = Z3i::RealPoint(1, 0, 0);
+
+        intersectionPoints.push_back(rayOrigin);
+        intersectionPoints.push_back(rayOrigin + rayDirection * 3);
 
         // Test if the test ray can intersect anything.
         for (int i = 0; i < mesh.nbFaces(); i++)
