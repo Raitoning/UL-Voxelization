@@ -14,30 +14,27 @@ using namespace DGtal;
 
 // TODO: Gaussian voxelization
 // TODO: Equations plane & lines
-// TODO: Vector vertices / faces & display
-// TODO: Test -> Direction
 
 Viewer3D<>::RealPoint planDirection(Viewer3D<>::RealPoint a, Viewer3D<>::RealPoint b,
-                       Viewer3D<>::RealPoint c){
-  Viewer3D<>::RealPoint u = b - a;
-  Viewer3D<>::RealPoint v = c - a;
-  
-  
-  // A x, B y, C z du plan.
-  float mA = u[1]*v[2] - u[2]*v[1];
-  float mB = u[2]*v[0] - u[0]*v[2];
-  float mC = u[0]*v[1] - u[1]*v[0];
-  
-  float mD = -(mA*a[0] + mB*a[1] + mC*a[2]);
-  
-  Viewer3D<>::RealPoint d = a;
-  
-  d[0] = mA;
-  d[1] = mB;
-  d[2] = mC;
+                                    Viewer3D<>::RealPoint c)
+{
+    Viewer3D<>::RealPoint u = b - a;
+    Viewer3D<>::RealPoint v = c - a;
 
-  return d;
+    // A x, B y, C z du plan.
+    float mA = u[1] * v[2] - u[2] * v[1];
+    float mB = u[2] * v[0] - u[0] * v[2];
+    float mC = u[0] * v[1] - u[1] * v[0];
 
+    float mD = -(mA * a[0] + mB * a[1] + mC * a[2]);
+
+    Viewer3D<>::RealPoint d = a;
+
+    d[0] = mA;
+    d[1] = mB;
+    d[2] = mC;
+
+    return d;
 }
 
 int DisplayBoundingBox(Viewer3D<> &view, Viewer3D<>::RealPoint min,
@@ -198,11 +195,33 @@ int main(int argc, char **argv)
     trace.info() << "Number of vertices: " << mesh.nbVertex() << std::endl;
     trace.info() << "Number of faces: " << mesh.nbFaces() << std::endl;
 
-    // Change the scale of the mesh if it's too small.
-    // mesh.changeScale(100);
-
     // Getting the bounding box.
-    std::pair<Viewer3D<>::RealPoint, Viewer3D<>::RealPoint> boundingBox = mesh.getBoundingBox();
+    std::pair<Viewer3D<>::RealPoint, Viewer3D<>::RealPoint>
+        boundingBox = mesh.getBoundingBox();
+
+    double xSize = abs(boundingBox.second[0] - boundingBox.first[0]);
+    double ySize = abs(boundingBox.second[1] - boundingBox.first[1]);
+    double zSize = abs(boundingBox.second[2] - boundingBox.first[2]);
+
+    trace.info() << "Mesh size: " << xSize << "; " << ySize << "; " << zSize << std::endl;
+
+    double scaleFactor = 1;
+
+    scaleFactor = 1. / (std::min(xSize, std::min(ySize, zSize)));
+
+    trace.info() << "Scale factor: " << scaleFactor << std::endl;
+
+    // Change the scale of the mesh if it's too small.
+    mesh.changeScale(scaleFactor);
+
+    boundingBox = mesh.getBoundingBox();
+
+    xSize = abs(boundingBox.second[0] - boundingBox.first[0]);
+    ySize = abs(boundingBox.second[1] - boundingBox.first[1]);
+    zSize = abs(boundingBox.second[2] - boundingBox.first[2]);
+
+    trace.info() << "Mesh size: " << xSize << "; " << ySize << "; " << zSize << std::endl;
+
     DisplayBoundingBox(viewer, boundingBox.first, boundingBox.second);
 
     trace.info() << "Bounding box: " << std::endl
