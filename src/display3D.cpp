@@ -14,7 +14,6 @@ using namespace DGtal;
 
 // TODO: Gaussian voxelization
 // TODO: Equations plane & lines
-// TODO: Vector vertices / faces & display
 // TODO: Test -> Direction
 bool AbetweenBandC( Viewer3D<>::RealPoint A,Viewer3D<>::RealPoint B, 
                                             Viewer3D<>::RealPoint C){
@@ -290,11 +289,33 @@ int main(int argc, char **argv)
     trace.info() << "Number of vertices: " << mesh.nbVertex() << std::endl;
     trace.info() << "Number of faces: " << mesh.nbFaces() << std::endl;
 
-    // Change the scale of the mesh if it's too small.
-    // mesh.changeScale(100);
-
     // Getting the bounding box.
-    std::pair<Viewer3D<>::RealPoint, Viewer3D<>::RealPoint> boundingBox = mesh.getBoundingBox();
+    std::pair<Viewer3D<>::RealPoint, Viewer3D<>::RealPoint>
+        boundingBox = mesh.getBoundingBox();
+
+    double xSize = abs(boundingBox.second[0] - boundingBox.first[0]);
+    double ySize = abs(boundingBox.second[1] - boundingBox.first[1]);
+    double zSize = abs(boundingBox.second[2] - boundingBox.first[2]);
+
+    trace.info() << "Mesh size: " << xSize << "; " << ySize << "; " << zSize << std::endl;
+
+    double scaleFactor = 1.;
+
+    scaleFactor = 1. / (std::min(xSize, std::min(ySize, zSize)));
+
+    trace.info() << "Scale factor: " << scaleFactor << std::endl;
+
+    // Change the scale of the mesh if it's too small.
+    mesh.changeScale(scaleFactor);
+
+    boundingBox = mesh.getBoundingBox();
+
+    xSize = abs(boundingBox.second[0] - boundingBox.first[0]);
+    ySize = abs(boundingBox.second[1] - boundingBox.first[1]);
+    zSize = abs(boundingBox.second[2] - boundingBox.first[2]);
+
+    trace.info() << "Mesh size: " << xSize << "; " << ySize << "; " << zSize << std::endl;
+
     DisplayBoundingBox(viewer, boundingBox.first, boundingBox.second);
 
     trace.info() << "Bounding box: " << std::endl
@@ -303,9 +324,9 @@ int main(int argc, char **argv)
 
     Z3i::RealPoint intersection;
 
-    float xStep = ((boundingBox.second[0] - boundingBox.first[0]) / float(horizontalResolution - 1));
-    float yStep = ((boundingBox.second[1] - boundingBox.first[1]) / float(verticalResolution - 1));
-    float zStep = ((boundingBox.second[2] - boundingBox.first[2]) / float(forwardResolution - 1));
+    double xStep = ((boundingBox.second[0] - boundingBox.first[0]) / double(horizontalResolution - 1));
+    double yStep = ((boundingBox.second[1] - boundingBox.first[1]) / double(verticalResolution - 1));
+    double zStep = ((boundingBox.second[2] - boundingBox.first[2]) / double(forwardResolution - 1));
 
     if (!gaussian)
     {
@@ -315,9 +336,9 @@ int main(int argc, char **argv)
         LOG("Min bbox:" << boundingBox.first[0] << " " << boundingBox.first[1] << " " << boundingBox.first[2]);
         LOG("Max bbox:" << boundingBox.second[0] << " " << boundingBox.second[1] << " " << boundingBox.second[2]);
 
-        for (float x = boundingBox.first[0]; x <= boundingBox.second[0]; x += xStep)
+        for (double x = boundingBox.first[0]; x <= boundingBox.second[0]; x += xStep)
         {
-            for (float z = boundingBox.first[2]; z <= boundingBox.second[2]; z += zStep)
+            for (double z = boundingBox.first[2]; z <= boundingBox.second[2]; z += zStep)
             {
                 Z3i::RealPoint rayOrigin(x, boundingBox.first[1] - 1, z);
 
@@ -339,9 +360,9 @@ int main(int argc, char **argv)
         // Raytracing from in front of.
         rayDirection = Z3i::RealPoint(0, 0, -1);
 
-        for (float x = boundingBox.first[0]; x <= boundingBox.second[0]; x += xStep)
+        for (double x = boundingBox.first[0]; x <= boundingBox.second[0]; x += xStep)
         {
-            for (float y = boundingBox.first[1]; y <= boundingBox.second[1]; y += yStep)
+            for (double y = boundingBox.first[1]; y <= boundingBox.second[1]; y += yStep)
             {
                 Z3i::RealPoint rayOrigin(x, y, boundingBox.first[2] + 1);
 
@@ -365,9 +386,9 @@ int main(int argc, char **argv)
         // Raytracing from the left.
         rayDirection = Z3i::RealPoint(1, 0, 0);
 
-        for (float y = boundingBox.first[1]; y <= boundingBox.second[1]; y += yStep)
+        for (double y = boundingBox.first[1]; y <= boundingBox.second[1]; y += yStep)
         {
-            for (float z = boundingBox.first[2]; z <= boundingBox.second[2]; z += zStep)
+            for (double z = boundingBox.first[2]; z <= boundingBox.second[2]; z += zStep)
             {
                 Z3i::RealPoint rayOrigin(boundingBox.first[0] - 1, y, z);
 
