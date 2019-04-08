@@ -10,5 +10,8 @@ add_definitions(-g)
 
 LINK_DIRECTORIES(${DGTAL_LIBRARY_DIRS})
 
-ADD_EXECUTABLE(display3D src/display3D.cpp)
+ADD_EXECUTABLE(display3D src/display3D.cpp src/Algorithms.cpp)
+ADD_EXECUTABLE(tests src/Tests.cpp src/Algorithms.cpp)
+
 TARGET_LINK_LIBRARIES(display3D ${DGTAL_LIBRARIES})
+TARGET_LINK_LIBRARIES(tests ${DGTAL_LIBRARIES})
