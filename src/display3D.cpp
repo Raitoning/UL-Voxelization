@@ -3,6 +3,7 @@
 // Y: Vertical (Y up)
 // Z: Forward/Backward (-Z forward)
 
+#include <string>
 #include <DGtal/base/Common.h>
 #include <DGtal/io/Display3D.h>
 #include <DGtal/io/readers/MeshReader.h>
@@ -25,6 +26,9 @@ int main(int argc, char **argv)
     // Define if the voxelisation will be Gaussian or resolution based.
     bool gaussian = true;
 
+    // Define if the mesh must be normalized.
+    bool normalize = false;
+
     // Resolution on the X axis.
     int horizontalResolution;
 
@@ -34,13 +38,16 @@ int main(int argc, char **argv)
     // Resolution on the Z axis.
     int forwardResolution;
 
+    // Scale factor used in normalization
+    double requiredScale = 1.;
+
     vector<Z3i::RealPoint> intersectionPoints;
 
     // Checking the arguments.
     // If there isn't a file name as argument, stop the execution.
-    if (argc != 2 && argc != 5)
+    if (argc != 2 && argc != 3 && argc != 5 && argc != 6)
     {
-        trace.info() << "Usage: display3D file [hres] [vres] [zres]" << std::endl
+        trace.info() << "Usage: display3D file [hres] [vres] [zres] [--normalize:size]" << std::endl
                      << "Now exiting..." << std::endl;
 
         return 0;
@@ -52,14 +59,31 @@ int main(int argc, char **argv)
         trace.info() << "Input file: " << inputFile << std::endl;
     }
 
-    if (argc == 5)
+    if (argc == 3 || argc == 6)
+    {
+        normalize = true;
+
+        std::string arg = argv[argc - 1];
+
+        requiredScale = atof(arg.substr(12).c_str());
+    }
+
+    if (argc > 3)
     {
         horizontalResolution = atoi(argv[2]);
         verticalResolution = atoi(argv[3]);
         forwardResolution = atoi(argv[4]);
-        gaussian = false;
 
-        LOG("X, Y, Z:" << horizontalResolution << " " << verticalResolution << " " << forwardResolution);
+        trace.info() << "X, Y, Z:" << horizontalResolution << " " << verticalResolution << " " << forwardResolution << std::endl;
+
+        if (horizontalResolution < 1 || verticalResolution < 1 || forwardResolution < 1)
+        {
+            trace.error() << "A resolution must be at least of two." << std::endl;
+            trace.info() << "Now exiting..." << std::endl;
+
+            return 0;
+        }
+        gaussian = false;
     }
 
     // qT Application hosting the viewer.
@@ -91,14 +115,15 @@ int main(int argc, char **argv)
 
     trace.info() << "Mesh size: " << xSize << "; " << ySize << "; " << zSize << std::endl;
 
-    double scaleFactor = 1.;
+    if (normalize)
+    {
 
-    scaleFactor = 1. / (std::min(xSize, std::min(ySize, zSize)));
+        double scaleFactor = requiredScale / (std::min(xSize, std::min(ySize, zSize)));
+        trace.info() << "Scale factor: " << scaleFactor << std::endl;
 
-    trace.info() << "Scale factor: " << scaleFactor << std::endl;
-
-    // Change the scale of the mesh if it's too small.
-    mesh.changeScale(scaleFactor);
+        // Change the scale of the mesh if it's too small.
+        mesh.changeScale(scaleFactor);
+    }
 
     boundingBox = mesh.getBoundingBox();
 
