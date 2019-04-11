@@ -221,3 +221,23 @@ bool RayIntersectsTriangle(Viewer3D<>::RealPoint rayOrigin,
 
     return false;
 }
+
+bool realPointEquals(Viewer3D<>::RealPoint pointA,Viewer3D<>::RealPoint pointB){
+
+    double tmp;
+    double eps = 0.0000001;
+
+    tmp = pointA[0];
+    if(tmp > pointB[0] + eps && tmp < pointB[0] - eps)
+        return false;
+
+    tmp = pointA[1];
+    if(tmp > pointB[1] + eps && tmp < pointB[1] - eps)
+        return false;
+
+    tmp = pointA[2];
+    if(tmp > pointB[2] + eps && tmp < pointB[2] - eps)
+        return false;
+
+    return true;
+}

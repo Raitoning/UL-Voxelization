@@ -23,3 +23,5 @@ bool RayIntersectsTriangle(DGtal::Viewer3D<>::RealPoint rayOrigin,
                            DGtal::Viewer3D<>::RealPoint b,
                            DGtal::Viewer3D<>::RealPoint c,
                            DGtal::Viewer3D<>::RealPoint &outIntersectionPoint);
+
+bool realPointEquals(Viewer3D<>::RealPoint pointA, Viewer3D<>::RealPoint pointB);
