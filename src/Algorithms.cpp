@@ -306,3 +306,39 @@ bool realPointEquals(Viewer3D<>::RealPoint pointA,Viewer3D<>::RealPoint pointB){
 
     return true;
 }
+
+void addResult(vector<stockage> result, vector<Viewer3D<>::RealPoint> listePoint){
+    int tmp;
+    bool end;
+
+    for(int i = 0;i < listePoint.size();i++){
+        
+        end = false;
+        tmp = 0;
+
+        while(tmp < result.size() && !end){
+
+            if(realPointEquals(result[tmp].point,listePoint[i])){
+
+                result[tmp].qte ++;
+                end = true;
+
+            }
+
+            tmp ++;
+
+        }
+
+        if(!end){
+
+            stockage nouveau;
+            nouveau.qte = 1;
+            nouveau.point = listePoint[i];
+            result.push_back(nouveau);
+
+
+        }
+
+    }
+
+}

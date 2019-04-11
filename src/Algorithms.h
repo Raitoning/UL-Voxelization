@@ -30,10 +30,17 @@ Viewer3D<>::RealPoint createStep(Viewer3D<>::RealPoint dir, double ratioX, doubl
 
 vector<Viewer3D<>::RealPoint> pointInterieur(Viewer3D<>::RealPoint origin, Viewer3D<>::RealPoint dir, vector<Viewer3D<>::RealPoint> intersects, Viewer3D<>::RealPoint step);
 
+void addResult(vector<stockage> result, vector<Viewer3D<>::RealPoint> listePoint);
+
 struct indexation{
     int index;
     double value;
     bool operator<(const indexation& a) const{
         return value < a.value;
     }
+};
+
+struct stockage{
+    Viewer3D<>::RealPoint point;
+    int qte;
 };
