@@ -336,9 +336,20 @@ void addResult(vector<stockage> result, vector<Viewer3D<>::RealPoint> listePoint
             nouveau.point = listePoint[i];
             result.push_back(nouveau);
 
-
         }
 
     }
 
+}
+
+vector<Viewer3D<>::RealPoint> computeVote(vector<stockage> resultats, int seuil){
+    vector<Viewer3D<>::RealPoint> res;
+
+    for(int i = 0; i < resultats.size();i++){
+        if(resultats[i].qte >= seuil){
+            res.push_back(resultats[i].point);
+        }
+    }
+
+    return res;
 }

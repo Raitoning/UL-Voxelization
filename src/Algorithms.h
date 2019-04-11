@@ -32,6 +32,8 @@ vector<Viewer3D<>::RealPoint> pointInterieur(Viewer3D<>::RealPoint origin, Viewe
 
 void addResult(vector<stockage> result, vector<Viewer3D<>::RealPoint> listePoint);
 
+vector<Viewer3D<>::RealPoint> computeVote(vector<stockage> resultats, int seuil);
+
 struct indexation{
     int index;
     double value;
