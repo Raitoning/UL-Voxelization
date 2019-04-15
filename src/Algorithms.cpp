@@ -225,131 +225,132 @@ bool RayIntersectsTriangle(Viewer3D<>::RealPoint rayOrigin,
 /* !!! Partie repérage point intérieur mesh !!! */
 
 //TODO : ajouter plan différent x,y,z
-Viewer3D<>::RealPoint createStep(Viewer3D<>::RealPoint dir, double ratioX, double ratioY, double ratioZ){
-    Viewer3D<>::RealPoint resultat;
+// FIXME: use maps instead of homemade structures.
+// Viewer3D<>::RealPoint createStep(Viewer3D<>::RealPoint dir, double ratioX, double ratioY, double ratioZ){
+//     Viewer3D<>::RealPoint resultat;
 
-    if(dir[0] == 1)
-        resultat[0] = ratioX;
-    else resultat[0] = 0;
+//     if(dir[0] == 1)
+//         resultat[0] = ratioX;
+//     else resultat[0] = 0;
 
-    if(dir[1] == 1)
-        resultat[1] = ratioY; 
-    else resultat[0] = 0;
+//     if(dir[1] == 1)
+//         resultat[1] = ratioY;
+//     else resultat[0] = 0;
 
-    if(dir[2] == 1)
-        resultat[2] = ratioZ;
-    else resultat[0] = 0;     
+//     if(dir[2] == 1)
+//         resultat[2] = ratioZ;
+//     else resultat[0] = 0;
 
-    return resultat;
-}
+//     return resultat;
+// }
 
-vector<Viewer3D<>::RealPoint> pointInterieur(Viewer3D<>::RealPoint origin, Viewer3D<>::RealPoint dir, vector<Viewer3D<>::RealPoint> intersects, Viewer3D<>::RealPoint step){
+// vector<Viewer3D<>::RealPoint> pointInterieur(Viewer3D<>::RealPoint origin, Viewer3D<>::RealPoint dir, vector<Viewer3D<>::RealPoint> intersects, Viewer3D<>::RealPoint step){
 
-    vector<Viewer3D<>::RealPoint> resultat;
-    vector<indexation> t;
+//     vector<Viewer3D<>::RealPoint> resultat;
+//     vector<indexation> t;
 
-    indexation value;
-    Viewer3D<>::RealPoint point; 
+//     indexation value;
+//     Viewer3D<>::RealPoint point;
 
-    for(int i = 0;i < intersects.size();i++){
-        value.index = i;
+//     for(int i = 0;i < intersects.size();i++){
+//         value.index = i;
 
-        point = origin - intersects[i];
-        value.value = point.norm();
-        t.push_back(value);
-    }
+//         point = origin - intersects[i];
+//         value.value = point.norm();
+//         t.push_back(value);
+//     }
 
-    sort(t.begin(),t.end());
+//     sort(t.begin(),t.end());
 
-    int count = 0;
-    
-    //on part de l'origin
-    point = origin;
+//     int count = 0;
 
-    while( count < intersects.size() ){
+//     //on part de l'origin
+//     point = origin;
 
-        //temps qu'on est pas dans l'interval
-        while(point[0] <= intersects[t[count].index][0] && point[1] <= intersects[t[count].index][1] && point[2] <= intersects[t[count].index][2])
-            point = point + step;
+//     while( count < intersects.size() ){
 
-        //temps qu'on est dans l'intervalle
-        while(point[0] <= intersects[t[count+1].index][0] && point[1] <= intersects[t[count+1].index][1] && point[2] <= intersects[t[count+1].index][2]){
+//         //temps qu'on est pas dans l'interval
+//         while(point[0] <= intersects[t[count].index][0] && point[1] <= intersects[t[count].index][1] && point[2] <= intersects[t[count].index][2])
+//             point = point + step;
 
-            //ajout du point
-            resultat.push_back(point);
-            point = point + step;
+//         //temps qu'on est dans l'intervalle
+//         while(point[0] <= intersects[t[count+1].index][0] && point[1] <= intersects[t[count+1].index][1] && point[2] <= intersects[t[count+1].index][2]){
 
-        }
+//             //ajout du point
+//             resultat.push_back(point);
+//             point = point + step;
 
-        count += 2;
-    }
+//         }
 
-    return resultat;
-}
+//         count += 2;
+//     }
 
-bool realPointEquals(Viewer3D<>::RealPoint pointA,Viewer3D<>::RealPoint pointB){
+//     return resultat;
+// }
 
-    double tmp;
-    double eps = 0.0000001;
+// bool realPointEquals(Viewer3D<>::RealPoint pointA,Viewer3D<>::RealPoint pointB){
 
-    tmp = pointA[0];
-    if(tmp > pointB[0] + eps && tmp < pointB[0] - eps)
-        return false;
+//     double tmp;
+//     double eps = 0.0000001;
 
-    tmp = pointA[1];
-    if(tmp > pointB[1] + eps && tmp < pointB[1] - eps)
-        return false;
+//     tmp = pointA[0];
+//     if(tmp > pointB[0] + eps && tmp < pointB[0] - eps)
+//         return false;
 
-    tmp = pointA[2];
-    if(tmp > pointB[2] + eps && tmp < pointB[2] - eps)
-        return false;
+//     tmp = pointA[1];
+//     if(tmp > pointB[1] + eps && tmp < pointB[1] - eps)
+//         return false;
 
-    return true;
-}
+//     tmp = pointA[2];
+//     if(tmp > pointB[2] + eps && tmp < pointB[2] - eps)
+//         return false;
 
-void addResult(vector<stockage> result, vector<Viewer3D<>::RealPoint> listePoint){
-    int tmp;
-    bool end;
+//     return true;
+// }
 
-    for(int i = 0;i < listePoint.size();i++){
-        
-        end = false;
-        tmp = 0;
+// void addResult(vector<stockage> result, vector<Viewer3D<>::RealPoint> listePoint){
+//     int tmp;
+//     bool end;
 
-        while(tmp < result.size() && !end){
+//     for(int i = 0;i < listePoint.size();i++){
 
-            if(realPointEquals(result[tmp].point,listePoint[i])){
+//         end = false;
+//         tmp = 0;
 
-                result[tmp].qte ++;
-                end = true;
+//         while(tmp < result.size() && !end){
 
-            }
+//             if(realPointEquals(result[tmp].point,listePoint[i])){
 
-            tmp ++;
+//                 result[tmp].qte ++;
+//                 end = true;
 
-        }
+//             }
 
-        if(!end){
+//             tmp ++;
 
-            stockage nouveau;
-            nouveau.qte = 1;
-            nouveau.point = listePoint[i];
-            result.push_back(nouveau);
+//         }
 
-        }
+//         if(!end){
 
-    }
+//             stockage nouveau;
+//             nouveau.qte = 1;
+//             nouveau.point = listePoint[i];
+//             result.push_back(nouveau);
 
-}
+//         }
 
-vector<Viewer3D<>::RealPoint> computeVote(vector<stockage> resultats, int seuil){
-    vector<Viewer3D<>::RealPoint> res;
+//     }
 
-    for(int i = 0; i < resultats.size();i++){
-        if(resultats[i].qte >= seuil){
-            res.push_back(resultats[i].point);
-        }
-    }
+// }
 
-    return res;
-}
+// vector<Viewer3D<>::RealPoint> computeVote(vector<stockage> resultats, int seuil){
+//     vector<Viewer3D<>::RealPoint> res;
+
+//     for(int i = 0; i < resultats.size();i++){
+//         if(resultats[i].qte >= seuil){
+//             res.push_back(resultats[i].point);
+//         }
+//     }
+
+//     return res;
+// }

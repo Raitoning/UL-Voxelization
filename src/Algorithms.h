@@ -2,47 +2,55 @@
 
 #include <DGtal/io/viewers/Viewer3D.h>
 
-bool AbetweenBandC(DGtal::Viewer3D<>::RealPoint A, DGtal::Viewer3D<>::RealPoint B,
-                   DGtal::Viewer3D<>::RealPoint C);
+using namespace DGtal;
 
-bool AinsideBoundingBox(DGtal::Viewer3D<>::RealPoint A, DGtal::Viewer3D<>::RealPoint min,
-                        DGtal::Viewer3D<>::RealPoint max);
+// FIXME: Do not create homemade structures
+// struct indexation
+// {
+//     int index;
+//     double value;
+//     bool operator<(const indexation &a) const
+//     {
+//         return value < a.value;
+//     }
+// };
 
-DGtal::Viewer3D<>::RealPoint planDirection(DGtal::Viewer3D<>::RealPoint a, DGtal::Viewer3D<>::RealPoint b,
-                                           DGtal::Viewer3D<>::RealPoint c, DGtal::Viewer3D<> &view, DGtal::Viewer3D<>::RealPoint min,
-                                           DGtal::Viewer3D<>::RealPoint max);
+// struct stockage
+// {
+//     Viewer3D<>::RealPoint point;
+//     int qte;
+// };
 
-void DisplayBoundingBox(DGtal::Viewer3D<> &view, DGtal::Viewer3D<>::RealPoint min,
-                        DGtal::Viewer3D<>::RealPoint max);
+bool AbetweenBandC(Viewer3D<>::RealPoint A, Viewer3D<>::RealPoint B,
+                   Viewer3D<>::RealPoint C);
+
+bool AinsideBoundingBox(Viewer3D<>::RealPoint A, Viewer3D<>::RealPoint min,
+                        Viewer3D<>::RealPoint max);
+
+Viewer3D<>::RealPoint planDirection(Viewer3D<>::RealPoint a, Viewer3D<>::RealPoint b,
+                                    Viewer3D<>::RealPoint c, Viewer3D<> &view, Viewer3D<>::RealPoint min,
+                                    Viewer3D<>::RealPoint max);
+
+void DisplayBoundingBox(Viewer3D<> &view, Viewer3D<>::RealPoint min,
+                        Viewer3D<>::RealPoint max);
 
 // Badouel's algorithm
 // https://graphics.stanford.edu/courses/cs348b-98/gg/intersect.html
-bool RayIntersectsTriangle(DGtal::Viewer3D<>::RealPoint rayOrigin,
-                           DGtal::Viewer3D<>::RealPoint rayDirection,
-                           DGtal::Viewer3D<>::RealPoint a,
-                           DGtal::Viewer3D<>::RealPoint b,
-                           DGtal::Viewer3D<>::RealPoint c,
-                           DGtal::Viewer3D<>::RealPoint &outIntersectionPoint);
+bool RayIntersectsTriangle(Viewer3D<>::RealPoint rayOrigin,
+                           Viewer3D<>::RealPoint rayDirection,
+                           Viewer3D<>::RealPoint a,
+                           Viewer3D<>::RealPoint b,
+                           Viewer3D<>::RealPoint c,
+                           Viewer3D<>::RealPoint &outIntersectionPoint);
 
-bool realPointEquals(Viewer3D<>::RealPoint pointA, Viewer3D<>::RealPoint pointB);
+// FIXME: Use std::maps instead of homemade functions.
 
-Viewer3D<>::RealPoint createStep(Viewer3D<>::RealPoint dir, double ratioX, double ratioY, double ratioZ);
+// bool realPointEquals(Viewer3D<>::RealPoint pointA, Viewer3D<>::RealPoint pointB);
 
-vector<Viewer3D<>::RealPoint> pointInterieur(Viewer3D<>::RealPoint origin, Viewer3D<>::RealPoint dir, vector<Viewer3D<>::RealPoint> intersects, Viewer3D<>::RealPoint step);
+// Viewer3D<>::RealPoint createStep(Viewer3D<>::RealPoint dir, double ratioX, double ratioY, double ratioZ);
 
-void addResult(vector<stockage> result, vector<Viewer3D<>::RealPoint> listePoint);
+// vector<Viewer3D<>::RealPoint> pointInterieur(Viewer3D<>::RealPoint origin, Viewer3D<>::RealPoint dir, vector<Viewer3D<>::RealPoint> intersects, Viewer3D<>::RealPoint step);
 
-vector<Viewer3D<>::RealPoint> computeVote(vector<stockage> resultats, int seuil);
+// void addResult(vector<stockage> result, vector<Viewer3D<>::RealPoint> listePoint);
 
-struct indexation{
-    int index;
-    double value;
-    bool operator<(const indexation& a) const{
-        return value < a.value;
-    }
-};
-
-struct stockage{
-    Viewer3D<>::RealPoint point;
-    int qte;
-};
+// vector<Viewer3D<>::RealPoint> computeVote(vector<stockage> resultats, int seuil);

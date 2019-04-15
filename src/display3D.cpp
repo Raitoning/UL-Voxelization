@@ -26,6 +26,10 @@ int main(int argc, char **argv)
     // Define if the voxelisation will be Gaussian or resolution based.
     bool gaussian = true;
 
+    // Map containing all the argments.
+    std::map<std::string, std::string> argments;
+    std::map<std::string, std::string>::iterator argsIterator;
+
     // Define if the mesh must be normalized.
     bool normalize = false;
 
@@ -45,41 +49,83 @@ int main(int argc, char **argv)
 
     // Checking the arguments.
     // If there isn't a file name as argument, stop the execution.
-    if (argc != 2 && argc != 3 && argc != 5 && argc != 6)
+    if (argc < 2)
     {
-        trace.info() << "Usage: display3D file [hres] [vres] [zres] [--normalize:size]" << std::endl
-                     << "Now exiting..." << std::endl;
+        DGtal::trace.info() << "Usage: display3D file [hres] [vres] [zres] [--normalize:size]" << std::endl
+                            << "Now exiting..." << std::endl;
 
         return 0;
     }
-    else
+
+    // If there are at least 2 argments (0 = program name, 1 = file name)
+    // Create a map to store each argments for easy use afterward.
+    for (int i = 2; i < argc; i++)
     {
-        // Get the file name to import the mesh.
-        inputFile = argv[1];
-        trace.info() << "Input file: " << inputFile << std::endl;
+        std::stringstream stream(argv[i]);
+        std::string value;
+        std::vector<std::string> strings;
+
+        // If it's an argments with a value (eg. --normalize=5)
+        // Split it in two strings: "--normalize" and "5" and put it in the map
+
+        // TODO: Find a way to split either on '=' or ':'
+        while (std::getline(stream, value, '='))
+        {
+            strings.push_back(value);
+        }
+
+        // if the split strings size is 1, it's not an argment with a value
+        // Simply put it as <argment, argment> in the map.
+        if (strings.size() == 1)
+        {
+            argments[argv[i]] = argv[i];
+        }
+        // Else, put the name of the argment and the value as <name, value>
+        // In the map (eg. <"--normalize", "5">).
+        else
+        {
+            argments[strings[0]] = strings[1];
+        }
     }
 
-    if (argc == 3 || argc == 6)
+    // Get the file name to import the mesh.
+    inputFile = argv[1];
+    DGtal::trace.info() << "Input file: " << inputFile << std::endl;
+
+    argsIterator = argments.find("--normalize");
+
+    if (argsIterator != argments.end())
     {
         normalize = true;
 
-        std::string arg = argv[argc - 1];
+        std::string value = argments["--normalize"];
 
-        requiredScale = atof(arg.substr(12).c_str());
+        requiredScale = atof(value.c_str());
     }
 
-    if (argc > 3)
-    {
-        horizontalResolution = atoi(argv[2]);
-        verticalResolution = atoi(argv[3]);
-        forwardResolution = atoi(argv[4]);
+    argsIterator = argments.find("--resolution");
 
-        trace.info() << "X, Y, Z:" << horizontalResolution << " " << verticalResolution << " " << forwardResolution << std::endl;
+    if (argsIterator != argments.end())
+    {
+        std::stringstream stream(argsIterator->second);
+        std::string value;
+        std::vector<std::string> strings;
+
+        while (std::getline(stream, value, ' '))
+        {
+            strings.push_back(value);
+        }
+
+        horizontalResolution = atoi(strings[0].c_str());
+        verticalResolution = atoi(strings[1].c_str());
+        forwardResolution = atoi(strings[2].c_str());
+
+        DGtal::trace.info() << "X, Y, Z:" << horizontalResolution << " " << verticalResolution << " " << forwardResolution << std::endl;
 
         if (horizontalResolution < 1 || verticalResolution < 1 || forwardResolution < 1)
         {
-            trace.error() << "A resolution must be at least of two." << std::endl;
-            trace.info() << "Now exiting..." << std::endl;
+            DGtal::trace.error() << "A resolution must be at least of two." << std::endl;
+            DGtal::trace.info() << "Now exiting..." << std::endl;
 
             return 0;
         }
@@ -97,13 +143,13 @@ int main(int argc, char **argv)
     Mesh<Viewer3D<>::RealPoint> mesh;
 
     // Importing the file
-    trace.info() << "Importing..." << std::endl;
+    DGtal::trace.info() << "Importing..." << std::endl;
 
     mesh << inputFile;
 
-    trace.info() << "Importing done..." << std::endl;
-    trace.info() << "Number of vertices: " << mesh.nbVertex() << std::endl;
-    trace.info() << "Number of faces: " << mesh.nbFaces() << std::endl;
+    DGtal::trace.info() << "Importing done..." << std::endl;
+    DGtal::trace.info() << "Number of vertices: " << mesh.nbVertex() << std::endl;
+    DGtal::trace.info() << "Number of faces: " << mesh.nbFaces() << std::endl;
 
     // Getting the bounding box.
     std::pair<Viewer3D<>::RealPoint, Viewer3D<>::RealPoint>
@@ -113,13 +159,13 @@ int main(int argc, char **argv)
     double ySize = abs(boundingBox.second[1] - boundingBox.first[1]);
     double zSize = abs(boundingBox.second[2] - boundingBox.first[2]);
 
-    trace.info() << "Mesh size: " << xSize << "; " << ySize << "; " << zSize << std::endl;
+    DGtal::trace.info() << "Mesh size: " << xSize << "; " << ySize << "; " << zSize << std::endl;
 
     if (normalize)
     {
 
         double scaleFactor = requiredScale / (std::min(xSize, std::min(ySize, zSize)));
-        trace.info() << "Scale factor: " << scaleFactor << std::endl;
+        DGtal::trace.info() << "Scale factor: " << scaleFactor << std::endl;
 
         // Change the scale of the mesh if it's too small.
         mesh.changeScale(scaleFactor);
@@ -131,13 +177,13 @@ int main(int argc, char **argv)
     ySize = abs(boundingBox.second[1] - boundingBox.first[1]);
     zSize = abs(boundingBox.second[2] - boundingBox.first[2]);
 
-    trace.info() << "Mesh size: " << xSize << "; " << ySize << "; " << zSize << std::endl;
+    DGtal::trace.info() << "Mesh size: " << xSize << "; " << ySize << "; " << zSize << std::endl;
 
     DisplayBoundingBox(viewer, boundingBox.first, boundingBox.second);
 
-    trace.info() << "Bounding box: " << std::endl
-                 << boundingBox.first << std::endl
-                 << boundingBox.second << std::endl;
+    DGtal::trace.info() << "Bounding box: " << std::endl
+                        << boundingBox.first << std::endl
+                        << boundingBox.second << std::endl;
 
     Z3i::RealPoint intersection;
 
@@ -168,7 +214,7 @@ int main(int argc, char **argv)
                     if (RayIntersectsTriangle(rayOrigin, rayDirection, mesh.getVertex(mesh.getFace(i)[0]), mesh.getVertex(mesh.getFace(i)[1]), mesh.getVertex(mesh.getFace(i)[2]), intersection))
                     {
                         mesh.setFaceColor(i, Color(255, 0, 0));
-                        trace.info() << "Intersection at: (" << intersection[0] << "," << intersection[1] << "," << intersection[2] << ")" << std::endl;
+                        DGtal::trace.info() << "Intersection at: (" << intersection[0] << "," << intersection[1] << "," << intersection[2] << ")" << std::endl;
                     }
                 }
             }
@@ -194,7 +240,7 @@ int main(int argc, char **argv)
                         // intersectionPoints.push_back(rayOrigin);
                         // intersectionPoints.push_back(rayOrigin + rayDirection);
                         mesh.setFaceColor(i, Color(255, 0, 0));
-                        trace.info() << "Intersection at: (" << intersection[0] << "," << intersection[1] << "," << intersection[2] << ")" << std::endl;
+                        DGtal::trace.info() << "Intersection at: (" << intersection[0] << "," << intersection[1] << "," << intersection[2] << ")" << std::endl;
                     }
                 }
             }
@@ -218,7 +264,7 @@ int main(int argc, char **argv)
                     if (RayIntersectsTriangle(rayOrigin, rayDirection, mesh.getVertex(mesh.getFace(i)[0]), mesh.getVertex(mesh.getFace(i)[1]), mesh.getVertex(mesh.getFace(i)[2]), intersection))
                     {
                         mesh.setFaceColor(i, Color(255, 0, 0));
-                        trace.info() << "Intersection at: (" << intersection[0] << "," << intersection[1] << "," << intersection[2] << ")" << std::endl;
+                        DGtal::trace.info() << "Intersection at: (" << intersection[0] << "," << intersection[1] << "," << intersection[2] << ")" << std::endl;
                     }
                 }
             }
@@ -228,7 +274,7 @@ int main(int argc, char **argv)
     {
         // Gaussian voxelization
         // TODO: Do the actual voxelization after unit tests
-        trace.warning() << "Gaussian voxelization not implemented yet. Doing nothing." << std::endl;
+        DGtal::trace.warning() << "Gaussian voxelization not implemented yet. Doing nothing." << std::endl;
     }
 
     // Push the mesh into the viewer.
