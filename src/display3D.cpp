@@ -273,8 +273,79 @@ int main(int argc, char **argv)
     else
     {
         // Gaussian voxelization
-        // TODO: Do the actual voxelization after unit tests
-        DGtal::trace.warning() << "Gaussian voxelization not implemented yet. Doing nothing." << std::endl;
+        // Raytracing from under.
+        Z3i::RealPoint rayDirection = Z3i::RealPoint(0, 1, 0);
+
+        for (int x = boundingBox.first[0] - 1; x <= boundingBox.second[0] + 1; x++)
+        {
+            for (int z = boundingBox.first[2] - 1; z <= boundingBox.second[2] + 1; z++)
+            {
+                Z3i::RealPoint rayOrigin(x, boundingBox.first[1] - 1, z);
+
+                intersectionPoints.push_back(rayOrigin);
+                intersectionPoints.push_back(rayOrigin + rayDirection * 3);
+                // Test if the test ray can intersect anything.
+                for (int i = 0; i < mesh.nbFaces(); i++)
+                {
+                    // If a face is intersected, set it's color to red.
+                    if (RayIntersectsTriangle(rayOrigin, rayDirection, mesh.getVertex(mesh.getFace(i)[0]), mesh.getVertex(mesh.getFace(i)[1]), mesh.getVertex(mesh.getFace(i)[2]), intersection))
+                    {
+                        mesh.setFaceColor(i, Color(255, 0, 0));
+                        DGtal::trace.info() << "Intersection at: (" << intersection[0] << "," << intersection[1] << "," << intersection[2] << ")" << std::endl;
+                    }
+                }
+            }
+        }
+
+        // Raytracing from in front of.
+        rayDirection = Z3i::RealPoint(0, 0, -1);
+
+        for (int x = boundingBox.first[0] - 1; x <= boundingBox.second[0] + 1; x++)
+        {
+            for (int y = boundingBox.first[1] - 1; y <= boundingBox.second[1] + 1; y++)
+            {
+                Z3i::RealPoint rayOrigin(x, y, boundingBox.first[2] + 1);
+
+                intersectionPoints.push_back(rayOrigin);
+                intersectionPoints.push_back(rayOrigin + rayDirection * 3);
+                // Test if the test ray can intersect anything.
+                for (int i = 0; i < mesh.nbFaces(); i++)
+                {
+                    // If a face is intersected, set it's color to red.
+                    if (RayIntersectsTriangle(rayOrigin, rayDirection, mesh.getVertex(mesh.getFace(i)[0]), mesh.getVertex(mesh.getFace(i)[1]), mesh.getVertex(mesh.getFace(i)[2]), intersection))
+                    {
+                        // intersectionPoints.push_back(rayOrigin);
+                        // intersectionPoints.push_back(rayOrigin + rayDirection);
+                        mesh.setFaceColor(i, Color(255, 0, 0));
+                        DGtal::trace.info() << "Intersection at: (" << intersection[0] << "," << intersection[1] << "," << intersection[2] << ")" << std::endl;
+                    }
+                }
+            }
+        }
+
+        // Raytracing from the left.
+        rayDirection = Z3i::RealPoint(1, 0, 0);
+
+        for (int y = boundingBox.first[1] - 1; y <= boundingBox.second[1] + 1; y++)
+        {
+            for (int z = boundingBox.first[2] - 1; z <= boundingBox.second[2] + 1; z++)
+            {
+                Z3i::RealPoint rayOrigin(boundingBox.first[0] - 1, y, z);
+
+                intersectionPoints.push_back(rayOrigin);
+                intersectionPoints.push_back(rayOrigin + rayDirection * 3);
+                // Test if the test ray can intersect anything.
+                for (int i = 0; i < mesh.nbFaces(); i++)
+                {
+                    // If a face is intersected, set it's color to red.
+                    if (RayIntersectsTriangle(rayOrigin, rayDirection, mesh.getVertex(mesh.getFace(i)[0]), mesh.getVertex(mesh.getFace(i)[1]), mesh.getVertex(mesh.getFace(i)[2]), intersection))
+                    {
+                        mesh.setFaceColor(i, Color(255, 0, 0));
+                        DGtal::trace.info() << "Intersection at: (" << intersection[0] << "," << intersection[1] << "," << intersection[2] << ")" << std::endl;
+                    }
+                }
+            }
+        }
     }
 
     // Push the mesh into the viewer.
