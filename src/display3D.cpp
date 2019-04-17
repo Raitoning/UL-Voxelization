@@ -11,6 +11,7 @@
 #include "Algorithms.h"
 
 #define LOG(X) std::cout << X << std::endl
+#define epsilon 1e-10
 
 using namespace DGtal;
 
@@ -199,9 +200,9 @@ int main(int argc, char **argv)
         LOG("Min bbox:" << boundingBox.first[0] << " " << boundingBox.first[1] << " " << boundingBox.first[2]);
         LOG("Max bbox:" << boundingBox.second[0] << " " << boundingBox.second[1] << " " << boundingBox.second[2]);
 
-        for (double x = boundingBox.first[0]; x <= boundingBox.second[0]; x += xStep)
+        for (double x = boundingBox.first[0]; x <= boundingBox.second[0] + epsilon; x += xStep)
         {
-            for (double z = boundingBox.first[2]; z <= boundingBox.second[2]; z += zStep)
+            for (double z = boundingBox.first[2]; z <= boundingBox.second[2] + epsilon; z += zStep)
             {
                 Z3i::RealPoint rayOrigin(x, boundingBox.first[1] - 1, z);
 
@@ -223,9 +224,9 @@ int main(int argc, char **argv)
         // Raytracing from in front of.
         rayDirection = Z3i::RealPoint(0, 0, -1);
 
-        for (double x = boundingBox.first[0]; x <= boundingBox.second[0]; x += xStep)
+        for (double x = boundingBox.first[0]; x <= boundingBox.second[0] + epsilon; x += xStep)
         {
-            for (double y = boundingBox.first[1]; y <= boundingBox.second[1]; y += yStep)
+            for (double y = boundingBox.first[1]; y <= boundingBox.second[1] + epsilon; y += yStep)
             {
                 Z3i::RealPoint rayOrigin(x, y, boundingBox.first[2] + 1);
 
@@ -249,9 +250,9 @@ int main(int argc, char **argv)
         // Raytracing from the left.
         rayDirection = Z3i::RealPoint(1, 0, 0);
 
-        for (double y = boundingBox.first[1]; y <= boundingBox.second[1]; y += yStep)
+        for (double y = boundingBox.first[1]; y <= boundingBox.second[1] + epsilon; y += yStep)
         {
-            for (double z = boundingBox.first[2]; z <= boundingBox.second[2]; z += zStep)
+            for (double z = boundingBox.first[2]; z <= boundingBox.second[2] + epsilon; z += zStep)
             {
                 Z3i::RealPoint rayOrigin(boundingBox.first[0] - 1, y, z);
 
