@@ -167,7 +167,7 @@ vector<Viewer3D<>::RealPoint> orthogonalDirections(Viewer3D<>::RealPoint directi
         result.push_back(normalisePoint(b));
         
     } else {//Most unlikely case, but still a posiblity.
-        Viewer3D<>::RealPoint a(direction[0], direction[2], direction[1]);
+        Viewer3D<>::RealPoint a(-direction[0], direction[1], -direction[2]);
         Viewer3D<>::RealPoint b = a.crossProduct(direction);
         a = direction.crossProduct(b);
         result.push_back(normalisePoint(a));
@@ -331,7 +331,7 @@ void originPointsRecursive(Viewer3D<>::RealPoint o, Viewer3D<>::RealPoint dir, V
     if(std::find(folder.begin(), folder.end(), o) == folder.end()) {
         if(intersectsBoundingBox(o,dir,min,max)){
             folder.push_back(o);
-        LOG("Folder"<<folder.size());
+
             originPointsRecursive(o+a,dir,a,b,folder,min,max);
             originPointsRecursive(o-a,dir,a,b,folder,min,max);
             originPointsRecursive(o+b,dir,a,b,folder,min,max);
@@ -603,8 +603,6 @@ int main(int argc, char **argv)
     //intersectionPoints.push_back(boundingBox.second);
     Viewer3D<>::RealPoint d = boundingBox.second-boundingBox.first;
     vector<Viewer3D<>::RealPoint> testingVectors = originPoints(boundingBox.first, d, boundingBox.first, boundingBox.second);
-
-    LOG("Size"<<testingVectors.size());
 
     for (int k=0;k < testingVectors.size();k++){
         for (int i = 0; i < mesh.nbFaces(); i++)
