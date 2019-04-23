@@ -31,6 +31,19 @@ bool AbetweenBandC( Viewer3D<>::RealPoint A,Viewer3D<>::RealPoint B,
     return true;
 }
 
+float distance_to_origin(Viewer3D<>::RealPoint p){
+
+    return sqrtf(p[0]*p[0] + p[1]*p[1] + p[2]*p[2]);
+}
+
+Viewer3D<>::RealPoint normalisePoint(Viewer3D<>::RealPoint p){
+
+    if(distance_to_origin(p)!=0){
+        return p * (1/distance_to_origin(p));
+    }
+    return p;
+}
+
 bool AinsideBoundingBox( Viewer3D<>::RealPoint A,Viewer3D<>::RealPoint min, 
                                             Viewer3D<>::RealPoint max){
     if (A[0]<min[0]||A[0]>max[0]){
@@ -131,6 +144,39 @@ Viewer3D<>::RealPoint planDirection(Viewer3D<>::RealPoint a, Viewer3D<>::RealPoi
     return d;
 }
 
+vector<Viewer3D<>::RealPoint> orthogonalDirections(Viewer3D<>::RealPoint direction){
+    vector<Viewer3D<>::RealPoint> result;
+
+    if (abs(direction[0])>abs(direction[1])&&abs(direction[0])>abs(direction[2])){
+        Viewer3D<>::RealPoint a(direction[0], direction[2], direction[1]);
+        Viewer3D<>::RealPoint b = a.crossProduct(direction);
+        result.push_back(normalisePoint(a));
+        result.push_back(normalisePoint(b));
+    }
+    else if (abs(direction[1])>abs(direction[0])&&abs(direction[1])>abs(direction[2])){
+        Viewer3D<>::RealPoint a(direction[2], direction[1], direction[0]);
+        Viewer3D<>::RealPoint b = a.crossProduct(direction);
+        result.push_back(normalisePoint(a));
+        result.push_back(normalisePoint(b));
+    }
+    else if (abs(direction[2])>abs(direction[0])&&abs(direction[2])>abs(direction[1])){
+
+        Viewer3D<>::RealPoint a(direction[2], direction[1], direction[0]);
+        Viewer3D<>::RealPoint b = a.crossProduct(direction);
+        result.push_back(normalisePoint(a));
+        result.push_back(normalisePoint(b));
+        
+    } else {//Most unlikely case, but still a posiblity.
+        Viewer3D<>::RealPoint a(direction[0], direction[2], direction[1]);
+        Viewer3D<>::RealPoint b = a.crossProduct(direction);
+        a = direction.crossProduct(b);
+        result.push_back(normalisePoint(a));
+        result.push_back(normalisePoint(b));
+    }
+
+    return result;
+}
+
 int DisplayBoundingBox(Viewer3D<> &view, Viewer3D<>::RealPoint min,
                        Viewer3D<>::RealPoint max)
 {
@@ -225,6 +271,87 @@ bool RayIntersectsTriangle(Viewer3D<>::RealPoint rayOrigin,
     return false;
 }
 
+bool intersectsBoundingBox(Viewer3D<>::RealPoint rayOrigin, Viewer3D<>::RealPoint rayDirection,
+                            Viewer3D<>::RealPoint min, Viewer3D<>::RealPoint max)
+{
+    Viewer3D<>::RealPoint A = max;
+    A[0] = min[0];
+    Viewer3D<>::RealPoint B = max;
+
+    Viewer3D<>::RealPoint C = max;
+    C[2] = min[2];
+    Viewer3D<>::RealPoint D = min;
+    D[1] = max[1];
+    Viewer3D<>::RealPoint E = min;
+
+    Viewer3D<>::RealPoint F = min;
+    F[0] = max[0];
+    Viewer3D<>::RealPoint G = max;
+    G[1] = min[1];
+    Viewer3D<>::RealPoint H = min;
+    H[2] = max[2];
+
+    vector<Viewer3D<>::RealPoint> bBoxVertexes;
+
+    bBoxVertexes.push_back(A);bBoxVertexes.push_back(B);bBoxVertexes.push_back(D);
+    bBoxVertexes.push_back(C);bBoxVertexes.push_back(B);bBoxVertexes.push_back(D);
+    
+    bBoxVertexes.push_back(A);bBoxVertexes.push_back(B);bBoxVertexes.push_back(H);
+    bBoxVertexes.push_back(G);bBoxVertexes.push_back(B);bBoxVertexes.push_back(H);
+    
+    bBoxVertexes.push_back(A);bBoxVertexes.push_back(E);bBoxVertexes.push_back(H);
+    bBoxVertexes.push_back(A);bBoxVertexes.push_back(E);bBoxVertexes.push_back(D);
+
+    bBoxVertexes.push_back(C);bBoxVertexes.push_back(F);bBoxVertexes.push_back(D);
+    bBoxVertexes.push_back(E);bBoxVertexes.push_back(F);bBoxVertexes.push_back(D);
+
+    bBoxVertexes.push_back(G);bBoxVertexes.push_back(F);bBoxVertexes.push_back(H);
+    bBoxVertexes.push_back(E);bBoxVertexes.push_back(F);bBoxVertexes.push_back(H);
+
+    bBoxVertexes.push_back(C);bBoxVertexes.push_back(G);bBoxVertexes.push_back(B);
+    bBoxVertexes.push_back(C);bBoxVertexes.push_back(G);bBoxVertexes.push_back(F);
+
+    int i =0;
+    bool match = false;
+    
+     while ((!match) && (i < bBoxVertexes.size())){
+        if (RayIntersectsTriangle(rayOrigin, rayDirection, bBoxVertexes[i], bBoxVertexes[i+1], bBoxVertexes[i+2],H))
+        {
+            match = true;
+        }
+        i+=3;
+    }
+
+    return match;
+}
+
+void originPointsRecursive(Viewer3D<>::RealPoint o, Viewer3D<>::RealPoint dir, Viewer3D<>::RealPoint a, Viewer3D<>::RealPoint b,
+                            vector<Viewer3D<>::RealPoint> &folder, Viewer3D<>::RealPoint min, Viewer3D<>::RealPoint max){
+
+    if(std::find(folder.begin(), folder.end(), o) == folder.end()) {
+        if(intersectsBoundingBox(o,dir,min,max)){
+            folder.push_back(o);
+        LOG("Folder"<<folder.size());
+            originPointsRecursive(o+a,dir,a,b,folder,min,max);
+            originPointsRecursive(o-a,dir,a,b,folder,min,max);
+            originPointsRecursive(o+b,dir,a,b,folder,min,max);
+            originPointsRecursive(o-b,dir,a,b,folder,min,max);
+        }   
+    }
+
+}
+
+vector<Viewer3D<>::RealPoint> originPoints(Viewer3D<>::RealPoint origin, Viewer3D<>::RealPoint normale,
+                                                Viewer3D<>::RealPoint min, Viewer3D<>::RealPoint max){
+    vector<Viewer3D<>::RealPoint> result;
+
+    vector<Viewer3D<>::RealPoint> d1d2=orthogonalDirections(normale);
+
+    originPointsRecursive(origin,normalisePoint(normale),d1d2[0],d1d2[1],result,min,max);
+
+    return result;    
+}
+
 int main(int argc, char **argv)
 {
     // File name of the mesh to import.
@@ -316,7 +443,7 @@ int main(int argc, char **argv)
 
     trace.info() << "Mesh size: " << xSize << "; " << ySize << "; " << zSize << std::endl;
 
-    DisplayBoundingBox(viewer, boundingBox.first, boundingBox.second);
+    //DisplayBoundingBox(viewer, boundingBox.first, boundingBox.second);
 
     trace.info() << "Bounding box: " << std::endl
                  << boundingBox.first << std::endl
@@ -455,7 +582,7 @@ int main(int argc, char **argv)
         intersectionPoints.push_back(rayOrigin);
         intersectionPoints.push_back(rayOrigin + rayDirection * 3);
 
-        planDirection(mesh.getVertex(mesh.getFace(0)[0]), mesh.getVertex(mesh.getFace(0)[1]), mesh.getVertex(mesh.getFace(0)[2]),viewer,boundingBox.first, boundingBox.second);
+        //planDirection(mesh.getVertex(mesh.getFace(0)[0]), mesh.getVertex(mesh.getFace(0)[1]), mesh.getVertex(mesh.getFace(0)[2]),viewer,boundingBox.first, boundingBox.second);
 
       
         // Test if the test ray can intersect anything.
@@ -470,15 +597,34 @@ int main(int argc, char **argv)
         }
     }
 
+    
+
+    //intersectionPoints.push_back(boundingBox.first);
+    //intersectionPoints.push_back(boundingBox.second);
+    Viewer3D<>::RealPoint d = boundingBox.second-boundingBox.first;
+    vector<Viewer3D<>::RealPoint> testingVectors = originPoints(boundingBox.first, d, boundingBox.first, boundingBox.second);
+
+    LOG("Size"<<testingVectors.size());
+
+    for (int k=0;k < testingVectors.size();k++){
+        for (int i = 0; i < mesh.nbFaces(); i++)
+        {
+            //If a face is intersected, set it's color to red.
+            if (RayIntersectsTriangle(testingVectors[k], d, mesh.getVertex(mesh.getFace(i)[0]), mesh.getVertex(mesh.getFace(i)[1]), mesh.getVertex(mesh.getFace(i)[2]), intersection))
+            {
+                mesh.setFaceColor(i, Color(255, 0, 0));
+                trace.info() << "Intersection at: (" << intersection[0] << "," << intersection[1] << "," << intersection[2] << ")" << std::endl;
+            }
+        }
+    }
+
     // Push the mesh into the viewer.
     viewer << mesh;
 
-    intersectionPoints.push_back(boundingBox.first);
-    intersectionPoints.push_back(boundingBox.second);
 
-    for (int i = 0; i < intersectionPoints.size(); i += 2)
+    for (int i = 0; i < testingVectors.size(); i += 2)
     {
-        viewer.addLine(intersectionPoints[i], intersectionPoints[i + 1], 0.03);
+        viewer.addLine(testingVectors[i], testingVectors[i]+(d*2), 0.03+i);
     }
 
     viewer << Viewer3D<>::updateDisplay;
