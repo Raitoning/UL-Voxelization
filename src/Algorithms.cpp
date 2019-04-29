@@ -226,67 +226,67 @@ bool RayIntersectsTriangle(Viewer3D<>::RealPoint rayOrigin,
 
 //TODO : ajouter plan différent x,y,z
 // FIXME: use maps instead of homemade structures.
-// Viewer3D<>::RealPoint createStep(Viewer3D<>::RealPoint dir, double ratioX, double ratioY, double ratioZ){
-//     Viewer3D<>::RealPoint resultat;
+Viewer3D<>::RealPoint createStep(Viewer3D<>::RealPoint dir, double ratioX, double ratioY, double ratioZ){
+    Viewer3D<>::RealPoint resultat;
 
-//     if(dir[0] == 1)
-//         resultat[0] = ratioX;
-//     else resultat[0] = 0;
+    if(dir[0] == 1)
+        resultat[0] = ratioX;
+    else resultat[0] = 0;
 
-//     if(dir[1] == 1)
-//         resultat[1] = ratioY;
-//     else resultat[0] = 0;
+    if(dir[1] == 1)
+        resultat[1] = ratioY;
+    else resultat[0] = 0;
 
-//     if(dir[2] == 1)
-//         resultat[2] = ratioZ;
-//     else resultat[0] = 0;
+    if(dir[2] == 1)
+        resultat[2] = ratioZ;
+    else resultat[0] = 0;
 
-//     return resultat;
-// }
+    return resultat;
+}
 
-// vector<Viewer3D<>::RealPoint> pointInterieur(Viewer3D<>::RealPoint origin, Viewer3D<>::RealPoint dir, vector<Viewer3D<>::RealPoint> intersects, Viewer3D<>::RealPoint step){
+vector<Viewer3D<>::RealPoint> pointInterieur(Viewer3D<>::RealPoint origin, Viewer3D<>::RealPoint dir, vector<Viewer3D<>::RealPoint> intersects, Viewer3D<>::RealPoint step){
 
-//     vector<Viewer3D<>::RealPoint> resultat;
-//     vector<indexation> t;
+    vector<Viewer3D<>::RealPoint> resultat;
+    vector<indexation> t;
 
-//     indexation value;
-//     Viewer3D<>::RealPoint point;
+    indexation value;
+    Viewer3D<>::RealPoint point;
 
-//     for(int i = 0;i < intersects.size();i++){
-//         value.index = i;
+    for(int i = 0;i < intersects.size();i++){
+        value.index = i;
 
-//         point = origin - intersects[i];
-//         value.value = point.norm();
-//         t.push_back(value);
-//     }
+        point = origin - intersects[i];
+        value.value = point.norm();
+        t.push_back(value);
+    }
 
-//     sort(t.begin(),t.end());
+    sort(t.begin(),t.end());
 
-//     int count = 0;
+    int count = 0;
 
-//     //on part de l'origin
-//     point = origin;
+    //on part de l'origin
+    point = origin;
 
-//     while( count < intersects.size() ){
+    while( count < intersects.size() ){
 
-//         //temps qu'on est pas dans l'interval
-//         while(point[0] <= intersects[t[count].index][0] && point[1] <= intersects[t[count].index][1] && point[2] <= intersects[t[count].index][2])
-//             point = point + step;
+        //temps qu'on est pas dans l'interval
+        while(point[0] <= intersects[t[count].index][0] && point[1] <= intersects[t[count].index][1] && point[2] <= intersects[t[count].index][2])
+            point = point + step;
 
-//         //temps qu'on est dans l'intervalle
-//         while(point[0] <= intersects[t[count+1].index][0] && point[1] <= intersects[t[count+1].index][1] && point[2] <= intersects[t[count+1].index][2]){
+        //temps qu'on est dans l'intervalle
+        while(point[0] <= intersects[t[count+1].index][0] && point[1] <= intersects[t[count+1].index][1] && point[2] <= intersects[t[count+1].index][2]){
 
-//             //ajout du point
-//             resultat.push_back(point);
-//             point = point + step;
+            //ajout du point
+            resultat.push_back(point);
+            point = point + step;
 
-//         }
+        }
 
-//         count += 2;
-//     }
+        count += 2;
+    }
 
-//     return resultat;
-// }
+    return resultat;
+}
 
 // bool realPointEquals(Viewer3D<>::RealPoint pointA,Viewer3D<>::RealPoint pointB){
 

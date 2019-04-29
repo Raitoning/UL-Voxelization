@@ -48,6 +48,8 @@ int main(int argc, char **argv)
 
     vector<Z3i::RealPoint> intersectionPoints;
 
+    std::vector<std::vector<Z3i::RealPoint>> pointInterieurs;
+
     // Checking the arguments.
     // If there isn't a file name as argument, stop the execution.
     if (argc < 2)
@@ -277,6 +279,9 @@ int main(int argc, char **argv)
         // Raytracing from under.
         Z3i::RealPoint rayDirection = Z3i::RealPoint(0, 1, 0);
 
+        Z3i::RealPoint stepInterieur = createStep(rayDirection,1,1,1);
+        std::vector<Z3i::RealPoint> intersectionsVecteur;
+
         for (int x = boundingBox.first[0] - 1; x <= boundingBox.second[0] + 1; x++)
         {
             for (int z = boundingBox.first[2] - 1; z <= boundingBox.second[2] + 1; z++)
@@ -293,13 +298,20 @@ int main(int argc, char **argv)
                     {
                         mesh.setFaceColor(i, Color(255, 0, 0));
                         DGtal::trace.info() << "Intersection at: (" << intersection[0] << "," << intersection[1] << "," << intersection[2] << ")" << std::endl;
+                        //on recupère les points d'intersection d'un vecteur
+                        intersectionsVecteur.push_back(intersection);
                     }
                 }
+                //calcul des point a l'interieur
+                pointInterieurs.push_back(pointInterieur( rayOrigin, rayDirection, intersectionsVecteur, stepInterieur));
+                intersectionsVecteur.clear();
             }
         }
 
         // Raytracing from in front of.
         rayDirection = Z3i::RealPoint(0, 0, -1);
+
+        stepInterieur = createStep(rayDirection,1,1,1);
 
         for (int x = boundingBox.first[0] - 1; x <= boundingBox.second[0] + 1; x++)
         {
@@ -319,13 +331,21 @@ int main(int argc, char **argv)
                         // intersectionPoints.push_back(rayOrigin + rayDirection);
                         mesh.setFaceColor(i, Color(255, 0, 0));
                         DGtal::trace.info() << "Intersection at: (" << intersection[0] << "," << intersection[1] << "," << intersection[2] << ")" << std::endl;
+                        //intersectionsVecteur.push_back(intersection);
                     }
+                    //calcul des point a l'interieur
+                    //pointInterieurs.push_back(pointInterieur( rayOrigin, rayDirection, intersectionsVecteur, stepInterieur));
+                    //intersectionsVecteur.clear();
                 }
             }
         }
 
+        
+
         // Raytracing from the left.
         rayDirection = Z3i::RealPoint(1, 0, 0);
+
+        stepInterieur = createStep(rayDirection,1,1,1);
 
         for (int y = boundingBox.first[1] - 1; y <= boundingBox.second[1] + 1; y++)
         {
@@ -343,7 +363,11 @@ int main(int argc, char **argv)
                     {
                         mesh.setFaceColor(i, Color(255, 0, 0));
                         DGtal::trace.info() << "Intersection at: (" << intersection[0] << "," << intersection[1] << "," << intersection[2] << ")" << std::endl;
+                        intersectionsVecteur.push_back(intersection);
                     }
+                    //calcul des point a l'interieur
+                    pointInterieurs.push_back(pointInterieur( rayOrigin, rayDirection, intersectionsVecteur, stepInterieur));
+                    intersectionsVecteur.clear();
                 }
             }
         }
@@ -358,6 +382,15 @@ int main(int argc, char **argv)
     for (int i = 0; i < intersectionPoints.size(); i += 2)
     {
         viewer.addLine(intersectionPoints[i], intersectionPoints[i + 1], 0.03);
+    }
+
+    //print des points a l'interieur
+    for(int g = 0; g < pointInterieurs.size();g++){
+        for(int h = 0; h < pointInterieurs[g].size() ;h++){  
+            printf("aaaa");
+            LOG(pointInterieurs[g][h]);
+            viewer.addCube(pointInterieurs[g][h]);
+        }
     }
 
     viewer << Viewer3D<>::updateDisplay;
