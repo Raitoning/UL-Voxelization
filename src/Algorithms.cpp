@@ -264,10 +264,17 @@ vector<Viewer3D<>::RealPoint> pointInterieur(Viewer3D<>::RealPoint origin, Viewe
 
     int count = 0;
 
+    if(intersects.size() % 2 == 1){
+        //intersects.push_back();
+        //TODO ajouter bbox
+        //en attendant on retire le dernier element
+        intersects.pop_back();
+    }
+
     //on part de l'origin
     point = origin;
 
-    while( count < intersects.size() ){
+    while( count < intersects.size()){
 
         //temps qu'on est pas dans l'interval
         while(point[0] <= intersects[t[count].index][0] && point[1] <= intersects[t[count].index][1] && point[2] <= intersects[t[count].index][2])

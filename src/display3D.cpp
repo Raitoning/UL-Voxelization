@@ -331,11 +331,11 @@ int main(int argc, char **argv)
                         // intersectionPoints.push_back(rayOrigin + rayDirection);
                         mesh.setFaceColor(i, Color(255, 0, 0));
                         DGtal::trace.info() << "Intersection at: (" << intersection[0] << "," << intersection[1] << "," << intersection[2] << ")" << std::endl;
-                        //intersectionsVecteur.push_back(intersection);
+                        intersectionsVecteur.push_back(intersection);
                     }
                     //calcul des point a l'interieur
-                    //pointInterieurs.push_back(pointInterieur( rayOrigin, rayDirection, intersectionsVecteur, stepInterieur));
-                    //intersectionsVecteur.clear();
+                    pointInterieurs.push_back(pointInterieur( rayOrigin, rayDirection, intersectionsVecteur, stepInterieur));
+                    intersectionsVecteur.clear();
                 }
             }
         }
