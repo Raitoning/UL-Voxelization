@@ -6,9 +6,11 @@ aux_source_directory(. SRC_LIST)
 FIND_PACKAGE(DGtal REQUIRED)
 INCLUDE_DIRECTORIES(${DGTAL_INCLUDE_DIRS})
 
+LINK_DIRECTORIES(${DGTAL_LIBRARY_DIRS})
+
 add_definitions(-g)
 
-LINK_DIRECTORIES(${DGTAL_LIBRARY_DIRS})
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
 
 ADD_EXECUTABLE(display3D src/display3D.cpp src/Algorithms.cpp)
 ADD_EXECUTABLE(tests src/Tests.cpp src/Algorithms.cpp)

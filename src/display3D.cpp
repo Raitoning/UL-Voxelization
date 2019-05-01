@@ -8,16 +8,16 @@
 #include <DGtal/io/Display3D.h>
 #include <DGtal/io/readers/MeshReader.h>
 #include <DGtal/io/viewers/Viewer3D.h>
+
+#include <omp.h>
+#include <chrono>
+
 #include "Algorithms.h"
 
 #define LOG(X) std::cout << X << std::endl
 #define epsilon 1e-10
 
 using namespace DGtal;
-
-// TODO: Gaussian voxelization
-// TODO: Equations plane & lines
-// TODO: Test -> Direction
 
 int main(int argc, char **argv)
 {
@@ -54,7 +54,7 @@ int main(int argc, char **argv)
     // If there isn't a file name as argument, stop the execution.
     if (argc < 2)
     {
-        DGtal::trace.info() << "Usage: display3D file [hres] [vres] [zres] [--normalize:size]" << std::endl
+        DGtal::trace.info() << "Usage: display3D file [--resolution=\"x y z\"] [--normalize=size] [--threaded=# of threads]" << std::endl
                             << "Now exiting..." << std::endl;
 
         return 0;
@@ -95,6 +95,7 @@ int main(int argc, char **argv)
     inputFile = argv[1];
     DGtal::trace.info() << "Input file: " << inputFile << std::endl;
 
+    // Handling the normalization argment.
     argsIterator = argments.find("--normalize");
 
     if (argsIterator != argments.end())
@@ -106,6 +107,7 @@ int main(int argc, char **argv)
         requiredScale = atof(value.c_str());
     }
 
+    // Handling the resolution argment.
     argsIterator = argments.find("--resolution");
 
     if (argsIterator != argments.end())
@@ -133,6 +135,25 @@ int main(int argc, char **argv)
             return 0;
         }
         gaussian = false;
+    }
+
+    // Handling the threading argment.
+    argsIterator = argments.find("--threaded");
+
+    if (argsIterator != argments.end())
+    {
+        std::string value = argments["--threaded"];
+        int nbThreads = atof(value.c_str());
+
+        if (nbThreads < 1)
+        {
+            DGtal::trace.error() << "At least one thread must be used." << std::endl;
+            DGtal::trace.info() << "Now exiting..." << std::endl;
+
+            return 0;
+        }
+
+        omp_set_num_threads(nbThreads);
     }
 
     // qT Application hosting the viewer.
@@ -194,6 +215,8 @@ int main(int argc, char **argv)
     double yStep = ((boundingBox.second[1] - boundingBox.first[1]) / double(verticalResolution - 1));
     double zStep = ((boundingBox.second[2] - boundingBox.first[2]) / double(forwardResolution - 1));
 
+    auto startTime = std::chrono::high_resolution_clock::now();
+
     if (!gaussian)
     {
         // Raytracing from under.
@@ -210,14 +233,17 @@ int main(int argc, char **argv)
 
                 intersectionPoints.push_back(rayOrigin);
                 intersectionPoints.push_back(rayOrigin + rayDirection * 3);
+
                 // Test if the test ray can intersect anything.
-                for (int i = 0; i < mesh.nbFaces(); i++)
+#pragma omp parallel for ordered
+                for (uint i = 0; i < mesh.nbFaces(); i++)
                 {
                     // If a face is intersected, set it's color to red.
                     if (RayIntersectsTriangle(rayOrigin, rayDirection, mesh.getVertex(mesh.getFace(i)[0]), mesh.getVertex(mesh.getFace(i)[1]), mesh.getVertex(mesh.getFace(i)[2]), intersection))
                     {
                         mesh.setFaceColor(i, Color(255, 0, 0));
-                        DGtal::trace.info() << "Intersection at: (" << intersection[0] << "," << intersection[1] << "," << intersection[2] << ")" << std::endl;
+                        DGtal::trace.info() << "Intersection at: (" << intersection[0] << "," << intersection[1] << "," << intersection[2] << ")"
+                                            << "(Thread #" << omp_get_thread_num() << ")" << std::endl;
                     }
                 }
             }
@@ -235,7 +261,8 @@ int main(int argc, char **argv)
                 intersectionPoints.push_back(rayOrigin);
                 intersectionPoints.push_back(rayOrigin + rayDirection * 3);
                 // Test if the test ray can intersect anything.
-                for (int i = 0; i < mesh.nbFaces(); i++)
+#pragma omp parallel for ordered
+                for (uint i = 0; i < mesh.nbFaces(); i++)
                 {
                     // If a face is intersected, set it's color to red.
                     if (RayIntersectsTriangle(rayOrigin, rayDirection, mesh.getVertex(mesh.getFace(i)[0]), mesh.getVertex(mesh.getFace(i)[1]), mesh.getVertex(mesh.getFace(i)[2]), intersection))
@@ -243,7 +270,8 @@ int main(int argc, char **argv)
                         // intersectionPoints.push_back(rayOrigin);
                         // intersectionPoints.push_back(rayOrigin + rayDirection);
                         mesh.setFaceColor(i, Color(255, 0, 0));
-                        DGtal::trace.info() << "Intersection at: (" << intersection[0] << "," << intersection[1] << "," << intersection[2] << ")" << std::endl;
+                        DGtal::trace.info() << "Intersection at: (" << intersection[0] << "," << intersection[1] << "," << intersection[2] << ")"
+                                            << "(Thread #" << omp_get_thread_num() << ")" << std::endl;
                     }
                 }
             }
@@ -261,13 +289,15 @@ int main(int argc, char **argv)
                 intersectionPoints.push_back(rayOrigin);
                 intersectionPoints.push_back(rayOrigin + rayDirection * 3);
                 // Test if the test ray can intersect anything.
-                for (int i = 0; i < mesh.nbFaces(); i++)
+#pragma omp parallel for ordered
+                for (uint i = 0; i < mesh.nbFaces(); i++)
                 {
                     // If a face is intersected, set it's color to red.
                     if (RayIntersectsTriangle(rayOrigin, rayDirection, mesh.getVertex(mesh.getFace(i)[0]), mesh.getVertex(mesh.getFace(i)[1]), mesh.getVertex(mesh.getFace(i)[2]), intersection))
                     {
                         mesh.setFaceColor(i, Color(255, 0, 0));
-                        DGtal::trace.info() << "Intersection at: (" << intersection[0] << "," << intersection[1] << "," << intersection[2] << ")" << std::endl;
+                        DGtal::trace.info() << "Intersection at: (" << intersection[0] << "," << intersection[1] << "," << intersection[2] << ")"
+                                            << "(Thread #" << omp_get_thread_num() << ")" << std::endl;
                     }
                 }
             }
@@ -279,31 +309,40 @@ int main(int argc, char **argv)
         // Raytracing from under.
         Z3i::RealPoint rayDirection = Z3i::RealPoint(0, 1, 0);
 
-        Z3i::RealPoint stepInterieur = createStep(rayDirection,1,1,1);
+        Z3i::RealPoint stepInterieur = createStep(rayDirection, 1, 1, 1);
         std::vector<Z3i::RealPoint> intersectionsVecteur;
 
         for (int x = boundingBox.first[0] - 1; x <= boundingBox.second[0] + 1; x++)
         {
+
             for (int z = boundingBox.first[2] - 1; z <= boundingBox.second[2] + 1; z++)
             {
                 Z3i::RealPoint rayOrigin(x, boundingBox.first[1] - 1, z);
 
                 intersectionPoints.push_back(rayOrigin);
                 intersectionPoints.push_back(rayOrigin + rayDirection * 3);
+
                 // Test if the test ray can intersect anything.
-                for (int i = 0; i < mesh.nbFaces(); i++)
+#pragma omp parallel for ordered
+                for (uint i = 0; i < mesh.nbFaces(); i++)
                 {
                     // If a face is intersected, set it's color to red.
                     if (RayIntersectsTriangle(rayOrigin, rayDirection, mesh.getVertex(mesh.getFace(i)[0]), mesh.getVertex(mesh.getFace(i)[1]), mesh.getVertex(mesh.getFace(i)[2]), intersection))
                     {
                         mesh.setFaceColor(i, Color(255, 0, 0));
-                        DGtal::trace.info() << "Intersection at: (" << intersection[0] << "," << intersection[1] << "," << intersection[2] << ")" << std::endl;
+                        DGtal::trace.info() << "Intersection at: (" << intersection[0] << "," << intersection[1] << "," << intersection[2] << ")"
+                                            << "(Thread #" << omp_get_thread_num() << ")" << std::endl;
+
                         //on recupère les points d'intersection d'un vecteur
-                        intersectionsVecteur.push_back(intersection);
+#pragma omp ordered
+                        {
+                            intersectionsVecteur.push_back(intersection);
+                        }
                     }
                 }
+
                 //calcul des point a l'interieur
-                pointInterieurs.push_back(pointInterieur( rayOrigin, rayDirection, intersectionsVecteur, stepInterieur));
+                pointInterieurs.push_back(pointInterieur(rayOrigin, rayDirection, intersectionsVecteur, stepInterieur));
                 intersectionsVecteur.clear();
             }
         }
@@ -311,7 +350,7 @@ int main(int argc, char **argv)
         // Raytracing from in front of.
         rayDirection = Z3i::RealPoint(0, 0, -1);
 
-        stepInterieur = createStep(rayDirection,1,1,1);
+        stepInterieur = createStep(rayDirection, 1, 1, 1);
 
         for (int x = boundingBox.first[0] - 1; x <= boundingBox.second[0] + 1; x++)
         {
@@ -321,57 +360,76 @@ int main(int argc, char **argv)
 
                 intersectionPoints.push_back(rayOrigin);
                 intersectionPoints.push_back(rayOrigin + rayDirection * 3);
+
                 // Test if the test ray can intersect anything.
-                for (int i = 0; i < mesh.nbFaces(); i++)
+#pragma omp parallel for ordered
+                for (uint i = 0; i < mesh.nbFaces(); i++)
                 {
                     // If a face is intersected, set it's color to red.
                     if (RayIntersectsTriangle(rayOrigin, rayDirection, mesh.getVertex(mesh.getFace(i)[0]), mesh.getVertex(mesh.getFace(i)[1]), mesh.getVertex(mesh.getFace(i)[2]), intersection))
                     {
-                        // intersectionPoints.push_back(rayOrigin);
-                        // intersectionPoints.push_back(rayOrigin + rayDirection);
                         mesh.setFaceColor(i, Color(255, 0, 0));
-                        DGtal::trace.info() << "Intersection at: (" << intersection[0] << "," << intersection[1] << "," << intersection[2] << ")" << std::endl;
-                        intersectionsVecteur.push_back(intersection);
+                        DGtal::trace.info() << "Intersection at: (" << intersection[0] << "," << intersection[1] << "," << intersection[2] << ")"
+                                            << "(Thread #" << omp_get_thread_num() << ")" << std::endl;
+
+                        //on recupère les points d'intersection d'un vecteur
+#pragma omp ordered
+                        {
+                            intersectionsVecteur.push_back(intersection);
+                        }
                     }
-                    //calcul des point a l'interieur
-                    pointInterieurs.push_back(pointInterieur( rayOrigin, rayDirection, intersectionsVecteur, stepInterieur));
-                    intersectionsVecteur.clear();
                 }
+
+                //calcul des point a l'interieur
+                // pointInterieurs.push_back(pointInterieur(rayOrigin, rayDirection, intersectionsVecteur, stepInterieur));
+                intersectionsVecteur.clear();
             }
         }
-
-        
 
         // Raytracing from the left.
         rayDirection = Z3i::RealPoint(1, 0, 0);
 
-        stepInterieur = createStep(rayDirection,1,1,1);
+        stepInterieur = createStep(rayDirection, 1, 1, 1);
 
         for (int y = boundingBox.first[1] - 1; y <= boundingBox.second[1] + 1; y++)
         {
-            for (int z = boundingBox.first[2] - 1; z <= boundingBox.second[2] + 1; z++)
+
+            for (int z = int(boundingBox.first[2] - 1); z <= int(boundingBox.second[2] + 1); z++)
             {
                 Z3i::RealPoint rayOrigin(boundingBox.first[0] - 1, y, z);
 
                 intersectionPoints.push_back(rayOrigin);
                 intersectionPoints.push_back(rayOrigin + rayDirection * 3);
+
                 // Test if the test ray can intersect anything.
-                for (int i = 0; i < mesh.nbFaces(); i++)
+
+#pragma omp parallel for ordered
+                for (uint i = 0; i < mesh.nbFaces(); i++)
                 {
                     // If a face is intersected, set it's color to red.
                     if (RayIntersectsTriangle(rayOrigin, rayDirection, mesh.getVertex(mesh.getFace(i)[0]), mesh.getVertex(mesh.getFace(i)[1]), mesh.getVertex(mesh.getFace(i)[2]), intersection))
                     {
                         mesh.setFaceColor(i, Color(255, 0, 0));
-                        DGtal::trace.info() << "Intersection at: (" << intersection[0] << "," << intersection[1] << "," << intersection[2] << ")" << std::endl;
-                        intersectionsVecteur.push_back(intersection);
+                        DGtal::trace.info() << "Intersection at: (" << intersection[0] << "," << intersection[1] << "," << intersection[2] << ")"
+                                            << "(Thread #" << omp_get_thread_num() << ")" << std::endl;
+
+                        //on recupère les points d'intersection d'un vecteur
+#pragma omp ordered
+                        {
+                            intersectionsVecteur.push_back(intersection);
+                        }
                     }
-                    //calcul des point a l'interieur
-                    pointInterieurs.push_back(pointInterieur( rayOrigin, rayDirection, intersectionsVecteur, stepInterieur));
-                    intersectionsVecteur.clear();
                 }
+
+                //calcul des point a l'interieur
+                // pointInterieurs.push_back(pointInterieur(rayOrigin, rayDirection, intersectionsVecteur, stepInterieur));
+                intersectionsVecteur.clear();
             }
         }
     }
+
+    auto endTime = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::seconds>(endTime - startTime);
 
     // Push the mesh into the viewer.
     viewer << mesh;
@@ -379,19 +437,22 @@ int main(int argc, char **argv)
     intersectionPoints.push_back(boundingBox.first);
     intersectionPoints.push_back(boundingBox.second);
 
-    for (int i = 0; i < intersectionPoints.size(); i += 2)
+    for (uint i = 0; i < intersectionPoints.size(); i += 2)
     {
         viewer.addLine(intersectionPoints[i], intersectionPoints[i + 1], 0.03);
     }
 
     //print des points a l'interieur
-    for(int g = 0; g < pointInterieurs.size();g++){
-        for(int h = 0; h < pointInterieurs[g].size() ;h++){  
-            printf("aaaa");
-            LOG(pointInterieurs[g][h]);
+    for (uint g = 0; g < pointInterieurs.size(); g++)
+    {
+        for (uint h = 0; h < pointInterieurs[g].size(); h++)
+        {
             viewer.addCube(pointInterieurs[g][h]);
         }
     }
+
+    std::cout
+        << "Computation time: " << duration.count() << " seconds with " << omp_get_max_threads() << " threads." << std::endl;
 
     viewer << Viewer3D<>::updateDisplay;
 
