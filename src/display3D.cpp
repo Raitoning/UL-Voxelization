@@ -150,12 +150,14 @@ vector<Viewer3D<>::RealPoint> orthogonalDirections(Viewer3D<>::RealPoint directi
     if (abs(direction[0])>abs(direction[1])&&abs(direction[0])>abs(direction[2])){
         Viewer3D<>::RealPoint a(direction[0], direction[2], direction[1]);
         Viewer3D<>::RealPoint b = a.crossProduct(direction);
+        a = direction.crossProduct(b);
         result.push_back(normalisePoint(a));
         result.push_back(normalisePoint(b));
     }
     else if (abs(direction[1])>abs(direction[0])&&abs(direction[1])>abs(direction[2])){
         Viewer3D<>::RealPoint a(direction[2], direction[1], direction[0]);
         Viewer3D<>::RealPoint b = a.crossProduct(direction);
+        a = direction.crossProduct(b);
         result.push_back(normalisePoint(a));
         result.push_back(normalisePoint(b));
     }
@@ -163,6 +165,7 @@ vector<Viewer3D<>::RealPoint> orthogonalDirections(Viewer3D<>::RealPoint directi
 
         Viewer3D<>::RealPoint a(direction[2], direction[1], direction[0]);
         Viewer3D<>::RealPoint b = a.crossProduct(direction);
+        a = direction.crossProduct(b);
         result.push_back(normalisePoint(a));
         result.push_back(normalisePoint(b));
         
@@ -342,12 +345,12 @@ void originPointsRecursive(Viewer3D<>::RealPoint o, Viewer3D<>::RealPoint dir, V
 }
 
 vector<Viewer3D<>::RealPoint> originPoints(Viewer3D<>::RealPoint origin, Viewer3D<>::RealPoint normale,
-                                                Viewer3D<>::RealPoint min, Viewer3D<>::RealPoint max){
+                                                Viewer3D<>::RealPoint min, Viewer3D<>::RealPoint max, double delta =1.0){
     vector<Viewer3D<>::RealPoint> result;
 
     vector<Viewer3D<>::RealPoint> d1d2=orthogonalDirections(normale);
 
-    originPointsRecursive(origin,normalisePoint(normale),d1d2[0],d1d2[1],result,min,max);
+    originPointsRecursive(origin,delta*normalisePoint(normale),delta*d1d2[0],delta*d1d2[1],result,min,max);
 
     return result;    
 }
