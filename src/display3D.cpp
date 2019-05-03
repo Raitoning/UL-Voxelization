@@ -274,7 +274,7 @@ bool RayIntersectsTriangle(Viewer3D<>::RealPoint rayOrigin,
     return false;
 }
 
-bool intersectsBoundingBox(Viewer3D<>::RealPoint rayOrigin, Viewer3D<>::RealPoint rayDirection,
+vector<Viewer3D<>::RealPoint> intersectsBoundingBoxCore(Viewer3D<>::RealPoint rayOrigin, Viewer3D<>::RealPoint rayDirection,
                             Viewer3D<>::RealPoint min, Viewer3D<>::RealPoint max)
 {
     Viewer3D<>::RealPoint A = max;
@@ -295,6 +295,7 @@ bool intersectsBoundingBox(Viewer3D<>::RealPoint rayOrigin, Viewer3D<>::RealPoin
     H[2] = max[2];
 
     vector<Viewer3D<>::RealPoint> bBoxVertexes;
+    //vector<Viewer3D<>::RealPoint> hits;
 
     bBoxVertexes.push_back(A);bBoxVertexes.push_back(B);bBoxVertexes.push_back(D);
     bBoxVertexes.push_back(C);bBoxVertexes.push_back(B);bBoxVertexes.push_back(D);
@@ -313,12 +314,22 @@ bool intersectsBoundingBox(Viewer3D<>::RealPoint rayOrigin, Viewer3D<>::RealPoin
 
     bBoxVertexes.push_back(C);bBoxVertexes.push_back(G);bBoxVertexes.push_back(B);
     bBoxVertexes.push_back(C);bBoxVertexes.push_back(G);bBoxVertexes.push_back(F);
+    
+    return bBoxVertexes;
+}
 
+bool intersectsBoundingBox(Viewer3D<>::RealPoint rayOrigin, Viewer3D<>::RealPoint rayDirection,
+                            Viewer3D<>::RealPoint min, Viewer3D<>::RealPoint max){
+                              
+    vector<Viewer3D<>::RealPoint> bBoxVertexes = intersectsBoundingBoxCore(rayOrigin, rayDirection, min, max);
+    
+    Viewer3D<>::RealPoint tmp;
+    
     int i =0;
     bool match = false;
     
      while ((!match) && (i < bBoxVertexes.size())){
-        if (RayIntersectsTriangle(rayOrigin, rayDirection, bBoxVertexes[i], bBoxVertexes[i+1], bBoxVertexes[i+2],H))
+        if (RayIntersectsTriangle(rayOrigin, rayDirection, bBoxVertexes[i], bBoxVertexes[i+1], bBoxVertexes[i+2],tmp))
         {
             match = true;
         }
@@ -327,6 +338,29 @@ bool intersectsBoundingBox(Viewer3D<>::RealPoint rayOrigin, Viewer3D<>::RealPoin
 
     return match;
 }
+
+vector<Viewer3D<>::RealPoint> intersectsBoundingBoxReturnsPoint(Viewer3D<>::RealPoint rayOrigin, Viewer3D<>::RealPoint rayDirection,
+                            Viewer3D<>::RealPoint min, Viewer3D<>::RealPoint max){
+                              
+    vector<Viewer3D<>::RealPoint> bBoxVertexes = intersectsBoundingBoxCore(rayOrigin, rayDirection, min, max);
+    
+    int i =0;
+    vector<Viewer3D<>::RealPoint> res;
+    Viewer3D<>::RealPoint tmp;
+    
+     while ((i < bBoxVertexes.size())){
+        if (RayIntersectsTriangle(rayOrigin, rayDirection, bBoxVertexes[i], bBoxVertexes[i+1], bBoxVertexes[i+2],tmp))
+        {
+            res.push_back(tmp);
+        }
+        i+=3;
+    }
+
+    return res;
+}
+
+
+
 
 void originPointsRecursive(Viewer3D<>::RealPoint o, Viewer3D<>::RealPoint dir, Viewer3D<>::RealPoint a, Viewer3D<>::RealPoint b,
                             vector<Viewer3D<>::RealPoint> &folder, Viewer3D<>::RealPoint min, Viewer3D<>::RealPoint max){
