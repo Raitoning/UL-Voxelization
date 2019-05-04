@@ -129,7 +129,7 @@ vector<Viewer3D<>::RealPoint> pointInterieur(Viewer3D<>::RealPoint origin, Viewe
     indexation value;
     Viewer3D<>::RealPoint point;
 
-    for (int i = 0; i < intersects.size(); i++)
+    for (uint i = 0; i < intersects.size(); i++)
     {
         value.index = i;
 
@@ -140,31 +140,31 @@ vector<Viewer3D<>::RealPoint> pointInterieur(Viewer3D<>::RealPoint origin, Viewe
 
     sort(t.begin(), t.end());
 
-    int count = 0;
+    uint count = 0;
 
     if (intersects.size() % 2 == 1)
     {
-        //intersects.push_back();
-        //TODO ajouter bbox
-        //en attendant on retire le dernier element
+        // intersects.push_back();
+        // TODO: ajouter bbox
+        // En attendant on retire le dernier element
         intersects.pop_back();
     }
 
-    //on part de l'origin
+    // On part de l'origine
     point = origin;
 
     while (count < intersects.size())
     {
 
-        //temps qu'on est pas dans l'interval
+        // Temps qu'on est pas dans l'interval
         while (point[0] <= intersects[t[count].index][0] && point[1] <= intersects[t[count].index][1] && point[2] <= intersects[t[count].index][2])
             point = point + step;
 
-        //temps qu'on est dans l'intervalle
+        // Temps qu'on est dans l'intervalle
         while (point[0] <= intersects[t[count + 1].index][0] && point[1] <= intersects[t[count + 1].index][1] && point[2] <= intersects[t[count + 1].index][2])
         {
 
-            //ajout du point
+            // Ajout du point
             resultat.push_back(point);
             point = point + step;
         }
@@ -342,7 +342,7 @@ Viewer3D<>::RealPoint planDirection(Viewer3D<>::RealPoint a, Viewer3D<>::RealPoi
     bBoxArcs.push_back(G - B);
     bBoxArcs.push_back(B);
 
-    for (int i = 0; i < bBoxArcs.size(); i += 2)
+    for (uint i = 0; i < bBoxArcs.size(); i += 2)
     {
         double t = -((d.dot(bBoxArcs[i + 1]) + mD) / d.dot(bBoxArcs[i]));
         Viewer3D<>::RealPoint point = bBoxArcs[i + 1] + (bBoxArcs[i] * t);
@@ -357,7 +357,7 @@ Viewer3D<>::RealPoint planDirection(Viewer3D<>::RealPoint a, Viewer3D<>::RealPoi
     }
 
     trace.info() << "plancut size:" << planCut.size();
-    for (int i = 0; i < planCut.size(); i++)
+    for (uint i = 0; i < planCut.size(); i++)
     {
         if (i == planCut.size() - 1)
         {
@@ -505,7 +505,7 @@ bool intersectsBoundingBox(Viewer3D<>::RealPoint rayOrigin, Viewer3D<>::RealPoin
 
     Viewer3D<>::RealPoint tmp;
 
-    int i = 0;
+    uint i = 0;
     bool match = false;
 
     while ((!match) && (i < bBoxVertexes.size()))
@@ -526,7 +526,7 @@ vector<Viewer3D<>::RealPoint> intersectsBoundingBoxReturnsPoint(Viewer3D<>::Real
 
     vector<Viewer3D<>::RealPoint> bBoxVertexes = intersectsBoundingBoxCore(rayOrigin, rayDirection, min, max);
 
-    int i = 0;
+    uint i = 0;
     vector<Viewer3D<>::RealPoint> res;
     Viewer3D<>::RealPoint tmp;
 
