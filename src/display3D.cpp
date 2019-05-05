@@ -46,6 +46,15 @@ int main(int argc, char **argv)
     // Scale factor used in normalization
     double requiredScale = 1.;
 
+    // RealPoint for the non orthogonal plane origin
+    Z3i::RealPoint planeOrigin;
+
+    // RealPoint for the non orthogonal plane direction
+    Z3i::RealPoint planeDirection;
+
+    // Delta for the non orthogonal plane
+    double planeDelta = 1.0;
+
     vector<Z3i::RealPoint> intersectionPoints;
 
     std::vector<std::vector<Z3i::RealPoint>> pointInterieurs;
@@ -54,7 +63,14 @@ int main(int argc, char **argv)
     // If there isn't a file name as argument, stop the execution.
     if (argc < 2)
     {
-        DGtal::trace.info() << "Usage: display3D file [--resolution=\"x y z\"] [--normalize=size] [--threaded=# of threads]" << std::endl
+        DGtal::trace.info() << "Usage: display3D file" << std::endl
+                            << "Options:" << std::endl
+                            << "[--resolution=\"x y z\"]\t\tDefine the resolution used to voxelize" << std::endl
+                            << "[--normalize=size]\t\tDefine the minimal size of the mesh" << std::endl
+                            << "[--threaded=# of threads]\tDefine the number of threads to use. Default is the number of threads of the CPU." << std::endl
+                            << "[--origin=\"x y z\"]\t\tDefine the origin of a non orthogonal plane." << std::endl
+                            << "[--direction=\"x y z\"]\t\tDefine the direction of a non orthogonal plane." << std::endl
+                            << "[--delta=value]\t\t\tDefine the delta of a non orthogonal plane." << std::endl
                             << "Now exiting..." << std::endl;
 
         return 0;
@@ -143,7 +159,7 @@ int main(int argc, char **argv)
     if (argsIterator != argments.end())
     {
         std::string value = argments["--threaded"];
-        int nbThreads = atof(value.c_str());
+        int nbThreads = atoi(value.c_str());
 
         if (nbThreads < 1)
         {
@@ -154,6 +170,67 @@ int main(int argc, char **argv)
         }
 
         omp_set_num_threads(nbThreads);
+    }
+
+    // Handling the plane origin argment.
+    argsIterator = argments.find("--origin");
+
+    if (argsIterator != argments.end())
+    {
+        std::stringstream stream(argsIterator->second);
+        std::string value;
+        std::vector<std::string> strings;
+
+        while (std::getline(stream, value, ' '))
+        {
+            strings.push_back(value);
+        }
+
+        double x = atof(strings[0].c_str());
+        double y = atof(strings[1].c_str());
+        double z = atof(strings[2].c_str());
+
+        DGtal::trace.info() << "X, Y, Z:" << x << " " << y << " " << z << std::endl;
+
+        planeOrigin = Z3i::RealPoint(x, y, z);
+
+        DGtal::trace.info() << "Plane origin: " << planeOrigin << std::endl;
+    }
+
+    // Handling the plane direction argment.
+    argsIterator = argments.find("--direction");
+
+    if (argsIterator != argments.end())
+    {
+        std::stringstream stream(argsIterator->second);
+        std::string value;
+        std::vector<std::string> strings;
+
+        while (std::getline(stream, value, ' '))
+        {
+            strings.push_back(value);
+        }
+
+        double x = atof(strings[0].c_str());
+        double y = atof(strings[1].c_str());
+        double z = atof(strings[2].c_str());
+
+        DGtal::trace.info() << "X, Y, Z:" << x << " " << y << " " << z << std::endl;
+
+        planeDirection = Z3i::RealPoint(x, y, z);
+
+        DGtal::trace.info() << "Plane direction: " << planeDirection << std::endl;
+    }
+
+    // Handling the delta argment.
+    argsIterator = argments.find("--delta");
+
+    if (argsIterator != argments.end())
+    {
+        std::string value = argments["--delta"];
+        planeDelta = atof(value.c_str());
+
+        DGtal::trace.info() << "Plane delta: " << planeDelta << std::endl;
     }
 
     // qT Application hosting the viewer.
@@ -430,6 +507,24 @@ int main(int argc, char **argv)
 
     auto endTime = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::seconds>(endTime - startTime);
+
+    //intersectionPoints.push_back(boundingBox.first);
+    //intersectionPoints.push_back(boundingBox.second);
+    Viewer3D<>::RealPoint d = boundingBox.second - boundingBox.first;
+    vector<Viewer3D<>::RealPoint> testingVectors = originPoints(boundingBox.first, d, boundingBox.first, boundingBox.second);
+
+    for (uint k = 0; k < testingVectors.size(); k++)
+    {
+        for (uint i = 0; i < mesh.nbFaces(); i++)
+        {
+            //If a face is intersected, set it's color to red.
+            if (RayIntersectsTriangle(testingVectors[k], d, mesh.getVertex(mesh.getFace(i)[0]), mesh.getVertex(mesh.getFace(i)[1]), mesh.getVertex(mesh.getFace(i)[2]), intersection))
+            {
+                mesh.setFaceColor(i, Color(255, 0, 0));
+                trace.info() << "Intersection at: (" << intersection[0] << "," << intersection[1] << "," << intersection[2] << ")" << std::endl;
+            }
+        }
+    }
 
     // Push the mesh into the viewer.
     viewer << mesh;

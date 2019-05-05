@@ -23,7 +23,7 @@ bool RunTest(Mesh<Viewer3D<>::RealPoint> &mesh, Z3i::RealPoint &rayOrigin, Z3i::
     Z3i::RealPoint intersection;
 
     // Test if the test ray can intersect anything.
-    for (int i = 0; i < mesh.nbFaces(); i++)
+    for (uint i = 0; i < mesh.nbFaces(); i++)
     {
         //If a face is intersected, set it's color to red.
         if (RayIntersectsTriangle(rayOrigin, rayDirection, mesh.getVertex(mesh.getFace(i)[0]), mesh.getVertex(mesh.getFace(i)[1]), mesh.getVertex(mesh.getFace(i)[2]), intersection))
@@ -216,7 +216,7 @@ int main(int argc, char **argv)
     intersectionPoints.push_back(boundingBox.first);
     intersectionPoints.push_back(boundingBox.second);
 
-    for (int i = 0; i < intersectionPoints.size(); i += 2)
+    for (uint i = 0; i < intersectionPoints.size(); i += 2)
     {
         viewer.addLine(intersectionPoints[i], intersectionPoints[i + 1], 0.03);
     }
