@@ -429,8 +429,7 @@ vector<Viewer3D<>::RealPoint> orthogonalDirections(Viewer3D<>::RealPoint directi
     return result;
 }
 
-vector<Viewer3D<>::RealPoint> intersectsBoundingBoxCore(Viewer3D<>::RealPoint rayOrigin, Viewer3D<>::RealPoint rayDirection,
-                                                        Viewer3D<>::RealPoint min, Viewer3D<>::RealPoint max)
+vector<Viewer3D<>::RealPoint> intersectsBoundingBoxCore(Viewer3D<>::RealPoint min, Viewer3D<>::RealPoint max)
 {
     Viewer3D<>::RealPoint A = max;
     A[0] = min[0];
@@ -501,7 +500,7 @@ bool intersectsBoundingBox(Viewer3D<>::RealPoint rayOrigin, Viewer3D<>::RealPoin
                            Viewer3D<>::RealPoint min, Viewer3D<>::RealPoint max)
 {
 
-    vector<Viewer3D<>::RealPoint> bBoxVertexes = intersectsBoundingBoxCore(rayOrigin, rayDirection, min, max);
+    vector<Viewer3D<>::RealPoint> bBoxVertexes = intersectsBoundingBoxCore(min, max);
 
     Viewer3D<>::RealPoint tmp;
 
@@ -511,12 +510,11 @@ bool intersectsBoundingBox(Viewer3D<>::RealPoint rayOrigin, Viewer3D<>::RealPoin
     while ((!match) && (i < bBoxVertexes.size()))
     {
         if (RayIntersectsTriangle(rayOrigin, rayDirection, bBoxVertexes[i], bBoxVertexes[i + 1], bBoxVertexes[i + 2], tmp))
-        {
+        { 
             match = true;
         }
         i += 3;
     }
-
     return match;
 }
 
@@ -524,7 +522,7 @@ vector<Viewer3D<>::RealPoint> intersectsBoundingBoxReturnsPoint(Viewer3D<>::Real
                                                                 Viewer3D<>::RealPoint min, Viewer3D<>::RealPoint max)
 {
 
-    vector<Viewer3D<>::RealPoint> bBoxVertexes = intersectsBoundingBoxCore(rayOrigin, rayDirection, min, max);
+    vector<Viewer3D<>::RealPoint> bBoxVertexes = intersectsBoundingBoxCore(min, max);
 
     uint i = 0;
     vector<Viewer3D<>::RealPoint> res;
@@ -544,12 +542,14 @@ vector<Viewer3D<>::RealPoint> intersectsBoundingBoxReturnsPoint(Viewer3D<>::Real
 
 void originPointsRecursive(Viewer3D<>::RealPoint o, Viewer3D<>::RealPoint dir, Viewer3D<>::RealPoint a, Viewer3D<>::RealPoint b,
                            vector<Viewer3D<>::RealPoint> &folder, Viewer3D<>::RealPoint min, Viewer3D<>::RealPoint max)
-{
+{       
 
     if (std::find(folder.begin(), folder.end(), o) == folder.end())
-    {
+    {   
+        
         if (intersectsBoundingBox(o, dir, min, max))
         {
+            
             folder.push_back(o);
 
             originPointsRecursive(o + a, dir, a, b, folder, min, max);
