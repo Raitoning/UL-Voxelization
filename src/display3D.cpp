@@ -506,25 +506,25 @@ int main(int argc, char **argv)
     }
 
     auto endTime = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::seconds>(endTime - startTime);
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
 
     //intersectionPoints.push_back(boundingBox.first);
     //intersectionPoints.push_back(boundingBox.second);
-    Viewer3D<>::RealPoint d = boundingBox.second - boundingBox.first;
-    vector<Viewer3D<>::RealPoint> testingVectors = originPoints(boundingBox.first, d, boundingBox.first, boundingBox.second);
+    // Viewer3D<>::RealPoint d = boundingBox.second - boundingBox.first;
+    // vector<Viewer3D<>::RealPoint> testingVectors = originPoints(boundingBox.first, d, boundingBox.first, boundingBox.second);
 
-    for (uint k = 0; k < testingVectors.size(); k++)
-    {
-        for (uint i = 0; i < mesh.nbFaces(); i++)
-        {
-            //If a face is intersected, set it's color to red.
-            if (RayIntersectsTriangle(testingVectors[k], d, mesh.getVertex(mesh.getFace(i)[0]), mesh.getVertex(mesh.getFace(i)[1]), mesh.getVertex(mesh.getFace(i)[2]), intersection))
-            {
-                mesh.setFaceColor(i, Color(255, 0, 0));
-                trace.info() << "Intersection at: (" << intersection[0] << "," << intersection[1] << "," << intersection[2] << ")" << std::endl;
-            }
-        }
-    }
+    // for (uint k = 0; k < testingVectors.size(); k++)
+    // {
+    //     for (uint i = 0; i < mesh.nbFaces(); i++)
+    //     {
+    //         //If a face is intersected, set it's color to red.
+    //         if (RayIntersectsTriangle(testingVectors[k], d, mesh.getVertex(mesh.getFace(i)[0]), mesh.getVertex(mesh.getFace(i)[1]), mesh.getVertex(mesh.getFace(i)[2]), intersection))
+    //         {
+    //             mesh.setFaceColor(i, Color(255, 0, 0));
+    //             trace.info() << "Intersection at: (" << intersection[0] << "," << intersection[1] << "," << intersection[2] << ")" << std::endl;
+    //         }
+    //     }
+    // }
 
     // Push the mesh into the viewer.
     viewer << mesh;
@@ -547,7 +547,7 @@ int main(int argc, char **argv)
     }
 
     std::cout
-        << "Computation time: " << duration.count() << " seconds with " << omp_get_max_threads() << " threads." << std::endl;
+        << "Computation time: " << duration.count() << " milliseconds with " << omp_get_max_threads() << " threads." << std::endl;
 
     viewer << Viewer3D<>::updateDisplay;
 
