@@ -397,7 +397,7 @@ int main(int argc, char **argv)
                 Z3i::RealPoint rayOrigin(x, boundingBox.first[1] - 1, z);
 
                 intersectionPoints.push_back(rayOrigin);
-                intersectionPoints.push_back(rayOrigin + rayDirection * 3);
+                intersectionPoints.push_back(rayOrigin + rayDirection * (boundingBox.second[1] - boundingBox.first[1] + 2));
 
                 // Test if the test ray can intersect anything.
 #pragma omp parallel for ordered
@@ -436,7 +436,7 @@ int main(int argc, char **argv)
                 Z3i::RealPoint rayOrigin(x, y, boundingBox.first[2] - 1);
 
                 intersectionPoints.push_back(rayOrigin);
-                intersectionPoints.push_back(rayOrigin + rayDirection * 3);
+                intersectionPoints.push_back(rayOrigin + rayDirection * (boundingBox.second[2] - boundingBox.first[2] + 2));
 
                 // Test if the test ray can intersect anything.
 #pragma omp parallel for ordered
@@ -476,7 +476,7 @@ int main(int argc, char **argv)
                 Z3i::RealPoint rayOrigin(boundingBox.first[0] - 1, y, z);
 
                 intersectionPoints.push_back(rayOrigin);
-                intersectionPoints.push_back(rayOrigin + rayDirection * 3);
+                intersectionPoints.push_back(rayOrigin + rayDirection * (boundingBox.second[0] - boundingBox.first[0] + 2));
 
                 // Test if the test ray can intersect anything.
 
