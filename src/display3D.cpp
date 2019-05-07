@@ -538,34 +538,60 @@ int main(int argc, char **argv)
     int count = 0;
     int seuil = 0;
 
-    int tabX = (int)abs(boundingBox.first[0] - boundingBox.second[0])+1;
-    int tabY = (int)abs(boundingBox.first[1] - boundingBox.second[1])+1;
-    int tabZ = (int)abs(boundingBox.first[2] - boundingBox.second[2])+1;
+    int tabX = (int)abs(boundingBox.first[0] - boundingBox.second[0]) + 1;
+    int tabY = (int)abs(boundingBox.first[1] - boundingBox.second[1]) + 1;
+    int tabZ = (int)abs(boundingBox.first[2] - boundingBox.second[2]) + 1;
 
     int voxels[tabX][tabY][tabZ] = {};
     //print des points a l'interieur
-    for(int g = 0; g < pointInterieurs.size();g++){
-        for(int h = 0; h < pointInterieurs[g].size() ;h++){  
+    for (int g = 0; g < pointInterieurs.size(); g++)
+    {
+        for (int h = 0; h < pointInterieurs[g].size(); h++)
+        {
             viewer.addCube(pointInterieurs[g][h]);
             //on stock au coordonné g,h,X les points (et leurs nombre d'occurences)
             voxels[(int)round(pointInterieurs[g][h][0] - boundingBox.first[0])][(int)round(pointInterieurs[g][h][1] - boundingBox.first[1])][(int)round(pointInterieurs[g][h][2] - boundingBox.first[2])] += 1;
-            count ++;
+            count++;
         }
     }
 
     //conservationSurface(voxels,tabX,tabY,tabZ,seuil);
     //todo retrouver offset
-    for(int i = 0;i < tabX;i++){
-        for(int j = 0; j < tabY;j++){
-            for(int k = 0;k < tabZ;k++){
-                if(voxels[i][j][k] > seuil)
-                    viewer.addCube(Z3i::RealPoint(i, j, k ));
+    for (int i = 0; i < tabX; i++)
+    {
+        for (int j = 0; j < tabY; j++)
+        {
+            for (int k = 0; k < tabZ; k++)
+            {
+                if (voxels[i][j][k] > seuil)
+                    viewer.addCube(Z3i::RealPoint(i, j, k));
             }
         }
     }
 
     std::cout
         << "Computation time: " << duration.count() << " milliseconds with " << omp_get_max_threads() << " threads." << std::endl;
+
+    std::ofstream file("result.vox");
+
+    if (file.is_open())
+    {
+        for (uint i = 0; i < pointInterieurs.size(); i++)
+        {
+            for (uint j = 0; j < pointInterieurs[i].size(); j++)
+            {
+                file << "" << pointInterieurs[i][j] << std::endl;
+            }
+        }
+
+        file.close();
+
+        std::cout << "Succesfully exported voxels to result.vox" << std::endl;
+    }
+    else
+    {
+        std::cout << "Failed to export voxels." << std::endl;
+    }
 
     viewer << Viewer3D<>::updateDisplay;
 
