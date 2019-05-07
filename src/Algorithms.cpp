@@ -1,0 +1,660 @@
+#include "Algorithms.h"
+
+using namespace DGtal;
+
+void DisplayBoundingBox(Viewer3D<> &view, Viewer3D<>::RealPoint min,
+                        Viewer3D<>::RealPoint max)
+{
+    Viewer3D<>::RealPoint A = max;
+    A[0] = min[0];
+    Viewer3D<>::RealPoint B = max;
+
+    Viewer3D<>::RealPoint C = max;
+    C[2] = min[2];
+    Viewer3D<>::RealPoint D = min;
+    D[1] = max[1];
+    Viewer3D<>::RealPoint E = min;
+
+    Viewer3D<>::RealPoint F = min;
+    F[0] = max[0];
+    Viewer3D<>::RealPoint G = max;
+    G[1] = min[1];
+    Viewer3D<>::RealPoint H = min;
+    H[2] = max[2];
+
+    view.addLine(A, B, 0.05);
+    view.addLine(B, C, 0.05);
+    view.addLine(C, D, 0.05);
+    view.addLine(D, A, 0.05);
+    view.addLine(H, E, 0.05);
+    view.addLine(E, F, 0.05);
+    view.addLine(F, G, 0.05);
+    view.addLine(G, H, 0.05);
+    view.addLine(A, H, 0.05);
+    view.addLine(D, E, 0.05);
+    view.addLine(C, F, 0.05);
+    view.addLine(B, G, 0.05);
+}
+
+// Badouel's algorithm
+// https://graphics.stanford.edu/courses/cs348b-98/gg/intersect.html
+bool RayIntersectsTriangle(Viewer3D<>::RealPoint rayOrigin,
+                           Viewer3D<>::RealPoint rayDirection,
+                           Viewer3D<>::RealPoint a,
+                           Viewer3D<>::RealPoint b,
+                           Viewer3D<>::RealPoint c,
+                           Viewer3D<>::RealPoint &outIntersectionPoint)
+{
+    Viewer3D<>::RealPoint ab = b - a;
+    Viewer3D<>::RealPoint ac = c - a;
+
+    Viewer3D<>::RealPoint cb = b - c;
+    Viewer3D<>::RealPoint ca = a - c;
+
+    Viewer3D<>::RealPoint normal = ab.crossProduct(ac);
+
+    float d = -a.dot(normal);
+
+    float angle = normal.dot(rayDirection);
+
+    // Test parallèle
+    // Si angle entre -Epsilon et Epsilon
+    if (angle < FLT_EPSILON && angle > -FLT_EPSILON)
+    {
+        return false;
+    }
+
+    float t = -((normal.dot(rayOrigin) + d) / normal.dot(rayDirection));
+
+    // Calcul point intersection
+    Viewer3D<>::RealPoint point = rayOrigin + (rayDirection * t);
+
+    Viewer3D<>::RealPoint bc = c - b;
+    Viewer3D<>::RealPoint cp = point - c;
+
+    float det = cb[1] * ca[0] + bc[0] * ca[1];
+    float factor_alpha = cb[1] * cp[0] + bc[0] * cp[1];
+    float factor_beta = ac[1] * cp[0] + ca[0] * cp[1];
+    float alpha = factor_alpha / det;
+    float beta = factor_beta / det;
+    float gamma = 1.0f - alpha - beta;
+
+    if (alpha >= 0 && alpha <= 1)
+    {
+        if (beta >= 0 && beta <= 1)
+        {
+            if (gamma >= 0 && gamma <= 1)
+            {
+                outIntersectionPoint = point;
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+/* !!! Partie repérage point intérieur mesh !!! */
+
+//TODO : ajouter plan différent x,y,z
+// FIXME: use maps instead of homemade structures.
+Viewer3D<>::RealPoint createStep(Viewer3D<>::RealPoint dir, double ratioX, double ratioY, double ratioZ){
+    Viewer3D<>::RealPoint resultat;
+
+    if(dir[0] == 1)
+        resultat[0] = ratioX;
+    else{
+
+        if(dir[0] == -1)
+            resultat[0] = -ratioX;
+        else resultat[0] = 0;
+
+    }
+
+    if(dir[1] == 1)
+        resultat[1] = ratioY;
+    else{
+
+        if(dir[1] == -1)
+            resultat[1] = -ratioY;
+        else resultat[1] = 0;   
+
+    }
+
+    if(dir[2] == 1)
+        resultat[2] = ratioZ;
+    else{
+
+        if(dir[2] == -1)
+            resultat[2] = -ratioZ;
+        else resultat[2] = 0;
+
+    }
+
+    return resultat;
+}
+
+vector<Viewer3D<>::RealPoint> pointInterieur(Viewer3D<>::RealPoint origin, Viewer3D<>::RealPoint dir, vector<Viewer3D<>::RealPoint> intersects, Viewer3D<>::RealPoint step){
+
+    vector<Viewer3D<>::RealPoint> resultat;
+    vector<indexation> t;
+
+    indexation value;
+    Viewer3D<>::RealPoint point;
+
+    for(int i = 0;i < intersects.size();i++){
+        value.index = i;
+
+        point = origin - intersects[i];
+        value.value = point.norm();
+        t.push_back(value);
+    }
+
+    sort(t.begin(),t.end());
+
+    int count = 0;
+
+    /*if(intersects.size() % 2 == 1){
+        //TODO ajouter bbox
+        //en attendant on retire le dernier element
+        //intersects.pop_back();
+        intersects.push_back(Viewer3D<>::RealPoint(intersects[intersects.size()-1][0] + 2*step[0],intersects[intersects.size()-1][1] + 2*step[1],intersects[intersects.size()-1][2] + 2*step[2]));
+    }*/
+
+    //on part de l'origin
+    point = origin;
+    point[0] = (int)point[0];
+    point[1] = (int)point[1];
+    point[2] = (int)point[2];
+
+    //pour gerer cas step negatif
+    bool modX = step[0] < 0;
+    bool modY = step[1] < 0;
+    bool modZ = step[2] < 0;
+
+    while( count < intersects.size()){
+
+        //temps qu'on est pas dans l'interval
+        while( ((!modX && point[0] <= intersects[t[count].index][0]) || (modX && point[0] >= intersects[t[count].index][0])) &&
+                ((!modY && point[1] <= intersects[t[count].index][1]) || (modY && point[1] >= intersects[t[count].index][1])) && 
+                ((!modZ && point[2] <= intersects[t[count].index][2]) || (modZ && point[2] >= intersects[t[count].index][2])))
+        {
+            point = point + step;
+        }
+
+        //temps qu'on est dans l'intervalle
+        while( ((!modX && point[0] <= intersects[t[count+1].index][0]) || (modX && point[0] >= intersects[t[count+1].index][0])) &&
+                ((!modY && point[1] <= intersects[t[count+1].index][1]) || (modY && point[1] >= intersects[t[count+1].index][1])) && 
+                ((!modZ && point[2] <= intersects[t[count+1].index][2]) || (modZ && point[2] >= intersects[t[count+1].index][2])))
+        {
+            //ajout du point
+            resultat.push_back(point);
+            point = point + step;
+
+        }
+        count += 2;
+    }
+
+    return resultat;
+}
+
+
+bool realPointEquals(Viewer3D<>::RealPoint pointA,Viewer3D<>::RealPoint pointB){
+
+    double tmp;
+    double eps = 0.0000001;
+
+    tmp = pointA[0];
+    if(tmp > pointB[0] + eps || tmp < pointB[0] - eps)
+        return false;
+
+    tmp = pointA[1];
+    if(tmp > pointB[1] + eps || tmp < pointB[1] - eps)
+        return false;
+
+    tmp = pointA[2];
+    if(tmp > pointB[2] + eps || tmp < pointB[2] - eps)
+        return false;
+
+    return true;
+}
+
+/*void conservationSurface(int voxels[][][],int a , int b, int c, int seuil){
+    bool keep = false;
+    for(int i = 0;i < a;i++){
+        for(int j = 0;j < b;j++){
+            for(int k =0;k < c;k++){
+                if(voxels[i][j][k] > seuil){
+
+                    for(int i1 = -1; i1 < 2 && !keep ; i1++){
+                        for(int i2 = -1; i2 < 2 && !keep; i2++){
+                            for(int i3 = -1; i3 < 2 && !keep; i3++){
+                                
+                                if( !(i1 ==  0 && i2 == 0 && i3 == 0)){
+                                    if(voxels[i+i1][j+i2][k+i3] < seuil)
+                                        keep = true;
+                                }
+
+                            }
+                        }
+                    }
+                    if(!keep)
+                        voxels[i][j][k] = 0;
+                    keep = false;
+                }
+
+            }
+        }
+    }
+
+}*/
+
+std::vector<Viewer3D<>::RealPoint> retirerDouble(std::vector<Viewer3D<>::RealPoint> valeurs){
+
+    std::vector<Viewer3D<>::RealPoint> res;
+    int j = 0;
+    bool fin = false;
+
+    for(int i = 0; i < valeurs.size();i++){
+        j = 0;
+        fin = false;
+        while(j < res.size() && !fin){
+
+            if(realPointEquals(res[j],valeurs[i])){
+                fin = true;
+            }
+            else{
+                j++;
+            }
+
+        }
+        if(!fin){
+            res.push_back(valeurs[i]);
+        }
+    }
+
+    return res;
+}
+
+// Algorithms used to create non orthogonal planes.
+
+bool AbetweenBandC(Viewer3D<>::RealPoint A, Viewer3D<>::RealPoint B,
+                   Viewer3D<>::RealPoint C)
+{
+
+    if (A[0] < std::min(B[0], C[0]) || A[0] > std::max(B[0], C[0]))
+    {
+        return false;
+    }
+    if (A[1] < std::min(B[1], C[1]) || A[0] > std::max(B[1], C[1]))
+    {
+        return false;
+    }
+    if (A[2] < std::min(B[2], C[2]) || A[2] > std::max(B[2], C[2]))
+    {
+        return false;
+    }
+
+    return true;
+}
+
+bool AinsideBoundingBox(Viewer3D<>::RealPoint A, Viewer3D<>::RealPoint min,
+                        Viewer3D<>::RealPoint max)
+{
+    if (A[0] < min[0] || A[0] > max[0])
+    {
+        return false;
+    }
+    if (A[1] < min[1] || A[1] > max[1])
+    {
+        return false;
+    }
+    if (A[2] < min[2] || A[2] > max[2])
+    {
+        return false;
+    }
+    return true;
+}
+
+Viewer3D<>::RealPoint planDirection(Viewer3D<>::RealPoint a, Viewer3D<>::RealPoint b,
+                                    Viewer3D<>::RealPoint c, Viewer3D<> &view, Viewer3D<>::RealPoint min,
+                                    Viewer3D<>::RealPoint max)
+{
+    Viewer3D<>::RealPoint u = b - a;
+    Viewer3D<>::RealPoint v = c - a;
+
+    // A x, B y, C z du plan.
+    double mA = u[1] * v[2] - u[2] * v[1];
+    double mB = u[2] * v[0] - u[0] * v[2];
+    double mC = u[0] * v[1] - u[1] * v[0];
+
+    double mD = -(mA * a[0] + mB * a[1] + mC * a[2]);
+
+    Viewer3D<>::RealPoint d = u.crossProduct(v);
+
+    Viewer3D<>::RealPoint A = max;
+    A[0] = min[0];
+    Viewer3D<>::RealPoint B = max;
+    Viewer3D<>::RealPoint C = max;
+    C[2] = min[2];
+    Viewer3D<>::RealPoint D = min;
+    D[1] = max[1];
+    Viewer3D<>::RealPoint E = min;
+    Viewer3D<>::RealPoint F = min;
+    F[0] = max[0];
+    Viewer3D<>::RealPoint G = max;
+    G[1] = min[1];
+    Viewer3D<>::RealPoint H = min;
+    H[2] = max[2];
+
+    vector<Viewer3D<>::RealPoint> bBoxArcs;
+
+    vector<Viewer3D<>::RealPoint> planCut;
+
+    bBoxArcs.push_back(B - A);
+    bBoxArcs.push_back(A);
+    bBoxArcs.push_back(C - B);
+    bBoxArcs.push_back(B);
+    bBoxArcs.push_back(D - C);
+    bBoxArcs.push_back(C);
+    bBoxArcs.push_back(D - A);
+    bBoxArcs.push_back(A);
+    bBoxArcs.push_back(E - H);
+    bBoxArcs.push_back(H);
+    bBoxArcs.push_back(F - E);
+    bBoxArcs.push_back(E);
+    bBoxArcs.push_back(G - F);
+    bBoxArcs.push_back(F);
+    bBoxArcs.push_back(H - G);
+    bBoxArcs.push_back(G);
+    bBoxArcs.push_back(H - A);
+    bBoxArcs.push_back(A);
+    bBoxArcs.push_back(E - D);
+    bBoxArcs.push_back(D);
+    bBoxArcs.push_back(F - C);
+    bBoxArcs.push_back(C);
+    bBoxArcs.push_back(G - B);
+    bBoxArcs.push_back(B);
+
+    for (uint i = 0; i < bBoxArcs.size(); i += 2)
+    {
+        double t = -((d.dot(bBoxArcs[i + 1]) + mD) / d.dot(bBoxArcs[i]));
+        Viewer3D<>::RealPoint point = bBoxArcs[i + 1] + (bBoxArcs[i] * t);
+
+        if (AbetweenBandC(point, bBoxArcs[i + 1], bBoxArcs[i + 1] + bBoxArcs[i]))
+        {
+            if (AinsideBoundingBox(point, min, max))
+            {
+                planCut.push_back(point);
+            }
+        }
+    }
+
+    trace.info() << "plancut size:" << planCut.size();
+    for (uint i = 0; i < planCut.size(); i++)
+    {
+        if (i == planCut.size() - 1)
+        {
+            view.addLine(planCut[i], planCut[0], 0.05);
+        }
+        else
+        {
+            view.addLine(planCut[i], planCut[i + 1], 0.05);
+        }
+    }
+
+    return d;
+}
+
+float distance_to_origin(Viewer3D<>::RealPoint p)
+{
+
+    return sqrtf(p[0] * p[0] + p[1] * p[1] + p[2] * p[2]);
+}
+
+Viewer3D<>::RealPoint normalisePoint(Viewer3D<>::RealPoint p)
+{
+
+    if (distance_to_origin(p) != 0)
+    {
+        return p * (1 / distance_to_origin(p));
+    }
+    return p;
+}
+
+vector<Viewer3D<>::RealPoint> orthogonalDirections(Viewer3D<>::RealPoint direction)
+{
+    vector<Viewer3D<>::RealPoint> result;
+    Viewer3D<>::RealPoint a; 
+    Viewer3D<>::RealPoint b; 
+
+    if (abs(direction[0]) > abs(direction[1]) && abs(direction[0]) > abs(direction[2]))
+    {
+        if (direction[2]==direction[1]){
+            a = Viewer3D<>::RealPoint(direction[2], direction[0], direction[1]);
+            b = Viewer3D<>::RealPoint(direction[1], direction[2], direction[0]);
+        }else {
+            a = Viewer3D<>::RealPoint(direction[0], direction[2], direction[1]);
+            b = a.crossProduct(direction);
+            a = direction.crossProduct(b);
+        }
+        result.push_back(normalisePoint(a));
+        result.push_back(normalisePoint(b));
+    }
+    else if (abs(direction[1]) > abs(direction[0]) && abs(direction[1]) > abs(direction[2]))
+    {
+        if (direction[2]==direction[0]){
+            a = Viewer3D<>::RealPoint(direction[2], direction[0], direction[1]);
+            b = Viewer3D<>::RealPoint(direction[1], direction[2], direction[0]);
+        }else {
+            a = Viewer3D<>::RealPoint(direction[2], direction[1], direction[0]);
+            b = a.crossProduct(direction);
+            a = direction.crossProduct(b);
+        }
+        result.push_back(normalisePoint(a));
+        result.push_back(normalisePoint(b));
+    }
+    else if (abs(direction[2]) > abs(direction[0]) && abs(direction[2]) > abs(direction[1]))
+    {
+        if (direction[0]==direction[1]){
+            a = Viewer3D<>::RealPoint(direction[2], direction[0], direction[1]);
+            b = Viewer3D<>::RealPoint(direction[1], direction[2], direction[0]);
+        }else {
+            a = Viewer3D<>::RealPoint(direction[2], direction[1], direction[0]);
+            b = a.crossProduct(direction);
+            a = direction.crossProduct(b);
+        }
+        result.push_back(normalisePoint(a));
+        result.push_back(normalisePoint(b));
+    }
+    else
+    { //Most unlikely case, but still a posiblity.
+        if (direction[0]==0||direction[1]==0||direction[2]==0){
+            a = Viewer3D<>::RealPoint(direction[2], direction[0], direction[1]);
+            b = Viewer3D<>::RealPoint(direction[1], direction[2], direction[0]);
+        }else {
+        a = Viewer3D<>::RealPoint(-direction[0], direction[1], -direction[2]);
+        b = a.crossProduct(direction);
+        a = direction.crossProduct(b);
+        }
+        result.push_back(normalisePoint(a));
+        result.push_back(normalisePoint(b));
+    }
+
+    return result;
+}
+
+vector<Viewer3D<>::RealPoint> intersectsBoundingBoxCore(Viewer3D<>::RealPoint min, Viewer3D<>::RealPoint max)
+{
+    Viewer3D<>::RealPoint A = max;
+    A[0] = min[0];
+    Viewer3D<>::RealPoint B = max;
+
+    Viewer3D<>::RealPoint C = max;
+    C[2] = min[2];
+    Viewer3D<>::RealPoint D = min;
+    D[1] = max[1];
+    Viewer3D<>::RealPoint E = min;
+
+    Viewer3D<>::RealPoint F = min;
+    F[0] = max[0];
+    Viewer3D<>::RealPoint G = max;
+    G[1] = min[1];
+    Viewer3D<>::RealPoint H = min;
+    H[2] = max[2];
+
+    vector<Viewer3D<>::RealPoint> bBoxVertexes;
+    //vector<Viewer3D<>::RealPoint> hits;
+
+    bBoxVertexes.push_back(A);
+    bBoxVertexes.push_back(B);
+    bBoxVertexes.push_back(D);
+    bBoxVertexes.push_back(C);
+    bBoxVertexes.push_back(B);
+    bBoxVertexes.push_back(D);
+
+    bBoxVertexes.push_back(A);
+    bBoxVertexes.push_back(B);
+    bBoxVertexes.push_back(H);
+    bBoxVertexes.push_back(G);
+    bBoxVertexes.push_back(B);
+    bBoxVertexes.push_back(H);
+
+    bBoxVertexes.push_back(A);
+    bBoxVertexes.push_back(E);
+    bBoxVertexes.push_back(H);
+    bBoxVertexes.push_back(A);
+    bBoxVertexes.push_back(E);
+    bBoxVertexes.push_back(D);
+
+    bBoxVertexes.push_back(C);
+    bBoxVertexes.push_back(F);
+    bBoxVertexes.push_back(D);
+    bBoxVertexes.push_back(E);
+    bBoxVertexes.push_back(F);
+    bBoxVertexes.push_back(D);
+
+    bBoxVertexes.push_back(G);
+    bBoxVertexes.push_back(F);
+    bBoxVertexes.push_back(H);
+    bBoxVertexes.push_back(E);
+    bBoxVertexes.push_back(F);
+    bBoxVertexes.push_back(H);
+
+    bBoxVertexes.push_back(C);
+    bBoxVertexes.push_back(G);
+    bBoxVertexes.push_back(B);
+    bBoxVertexes.push_back(C);
+    bBoxVertexes.push_back(G);
+    bBoxVertexes.push_back(F);
+
+    return bBoxVertexes;
+}
+
+bool intersectsBoundingBox(Viewer3D<>::RealPoint rayOrigin, Viewer3D<>::RealPoint rayDirection,
+                           Viewer3D<>::RealPoint min, Viewer3D<>::RealPoint max)
+{
+
+    vector<Viewer3D<>::RealPoint> bBoxVertexes = intersectsBoundingBoxCore(min, max);
+
+    Viewer3D<>::RealPoint tmp;
+
+    uint i = 0;
+    bool match = false;
+    std::cout << "bbox vertex : " << bBoxVertexes.size() << std::endl;
+    while ((!match) && (i < bBoxVertexes.size()-1))
+    {
+        std::cout << "intersects? " <<  RayIntersectsTriangle(rayOrigin, rayDirection, bBoxVertexes[i], bBoxVertexes[i + 1], bBoxVertexes[i + 2], tmp) << std::endl;
+        if (RayIntersectsTriangle(rayOrigin, rayDirection, bBoxVertexes[i], bBoxVertexes[i + 1], bBoxVertexes[i + 2], tmp))
+        { 
+            match = true;
+        }
+        i += 3;
+    }
+    return match;
+}
+
+vector<Viewer3D<>::RealPoint> intersectsBoundingBoxReturnsPoint(Viewer3D<>::RealPoint rayOrigin, Viewer3D<>::RealPoint rayDirection,
+                                                                Viewer3D<>::RealPoint min, Viewer3D<>::RealPoint max)
+{
+
+    vector<Viewer3D<>::RealPoint> bBoxVertexes = intersectsBoundingBoxCore(min, max);
+
+    uint i = 0;
+    vector<Viewer3D<>::RealPoint> res;
+    Viewer3D<>::RealPoint tmp;
+
+    while ((i < bBoxVertexes.size()-1))
+    {
+        if (RayIntersectsTriangle(rayOrigin, rayDirection, bBoxVertexes[i], bBoxVertexes[i + 1], bBoxVertexes[i + 2], tmp))
+        {
+            std::cout << "res "<<res.size()<< " true "<<true<<std::endl ;
+            res.push_back(tmp);
+        }
+        i += 3;
+    }
+
+    return res;
+}
+
+void originPointsRecursive(Viewer3D<>::RealPoint o, Viewer3D<>::RealPoint dir, Viewer3D<>::RealPoint a, Viewer3D<>::RealPoint b,
+                           vector<Viewer3D<>::RealPoint> &folder, Viewer3D<>::RealPoint min, Viewer3D<>::RealPoint max)
+{       
+
+    if (std::find(folder.begin(), folder.end(), o) == folder.end())
+    {   
+        std::cout << "foldersize : " << folder.size() << std::endl;
+        
+        if (intersectsBoundingBox(o, dir, min, max))
+        {
+            
+            folder.push_back(o);
+
+            originPointsRecursive(o + a, dir, a, b, folder, min, max);
+            originPointsRecursive(o - a, dir, a, b, folder, min, max);
+            originPointsRecursive(o + b, dir, a, b, folder, min, max);
+            originPointsRecursive(o - b, dir, a, b, folder, min, max);
+        }
+    }
+}
+
+Viewer3D<>::RealPoint RayIntersectsPlane(Viewer3D<>::RealPoint rayOrigin,
+                                        Viewer3D<>::RealPoint rayDirection,
+                                        Viewer3D<>::RealPoint a,
+                                        Viewer3D<>::RealPoint b,
+                                        Viewer3D<>::RealPoint c)
+{
+    Viewer3D<>::RealPoint ab = b - a;
+    Viewer3D<>::RealPoint ac = c - a;
+
+    Viewer3D<>::RealPoint normal = ab.crossProduct(ac);
+
+    float d = -a.dot(normal);
+
+    float t = -((normal.dot(rayOrigin) + d) / normal.dot(rayDirection));
+
+    // Calcul point intersection
+    Viewer3D<>::RealPoint point = rayOrigin + (rayDirection * t);
+
+    return point;
+}
+
+vector<Viewer3D<>::RealPoint> originPoints(Viewer3D<>::RealPoint origin, Viewer3D<>::RealPoint normale,
+                                           Viewer3D<>::RealPoint min, Viewer3D<>::RealPoint max, double delta)
+{
+    vector<Viewer3D<>::RealPoint> result;
+
+    vector<Viewer3D<>::RealPoint> d1d2 = orthogonalDirections(normale);
+
+    originPointsRecursive(origin, delta * normalisePoint(normale), delta * d1d2[0], delta * d1d2[1], result, min, max);
+
+    if (result.size()==0){
+        std::cout << "d1d2 : " << d1d2[0] << "," << d1d2[1] <<std::endl;
+        Viewer3D<>::RealPoint new_origin = RayIntersectsPlane( min+max, normale, origin, (origin+d1d2[0]), (origin+d1d2[1]));
+        std::cout << "We failed at calculating points of the origin plane." << std::endl;
+        std::cout << "Origin was moved to :" << new_origin[0] << "," << new_origin[1] << "," << new_origin[2] << std::endl;
+        originPointsRecursive(new_origin, delta * normalisePoint(normale), delta * d1d2[0], delta * d1d2[1], result, min, max);
+    }
+
+    return result;
+}
