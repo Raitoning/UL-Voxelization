@@ -529,9 +529,6 @@ int main(int argc, char **argv)
     // Push the mesh into the viewer.
     viewer << mesh;
 
-    intersectionPoints.push_back(boundingBox.first);
-    intersectionPoints.push_back(boundingBox.second);
-
     for (uint i = 0; i < intersectionPoints.size(); i += 2)
     {
         viewer.addLine(intersectionPoints[i], intersectionPoints[i + 1], 0.03);
