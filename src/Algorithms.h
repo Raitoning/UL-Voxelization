@@ -40,6 +40,9 @@ Viewer3D<>::RealPoint createStep(Viewer3D<>::RealPoint dir, double ratioX, doubl
 vector<Viewer3D<>::RealPoint> pointInterieur(Viewer3D<>::RealPoint origin, Viewer3D<>::RealPoint dir, vector<Viewer3D<>::RealPoint> intersects, Viewer3D<>::RealPoint step);
 
 std::vector<Viewer3D<>::RealPoint> retirerDouble(std::vector<Viewer3D<>::RealPoint> valeurs);
+
+//void conservationSurface(int voxels[][][],int a,int b ,int c, int seuil);
+
 // FIXME: Use std::maps instead of homemade functions.
 // bool realPointEquals(Viewer3D<>::RealPoint pointA, Viewer3D<>::RealPoint pointB);
 

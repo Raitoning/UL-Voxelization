@@ -556,7 +556,7 @@ int main(int argc, char **argv)
         }
     }
 
-    //voxels = conservationSurface(voxels);
+    //conservationSurface(voxels,tabX,tabY,tabZ,seuil);
     //todo retrouver offset
     for(int i = 0;i < tabX;i++){
         for(int j = 0; j < tabY;j++){
