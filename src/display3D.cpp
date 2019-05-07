@@ -1,187 +1,9 @@
-// Axes:
-// X: Horizontal
-// Y: Vertical (Y up)
-// Z: Forward/Backward (-Z forward)
-
-#include <DGtal/base/Common.h>
-#include <DGtal/io/Display3D.h>
-#include <DGtal/io/readers/MeshReader.h>
-#include <DGtal/io/viewers/Viewer3D.h>
-
-#define LOG(X) std::cout << X << std::endl
+#include "Algorithms.h"
 
 using namespace DGtal;
 
-// TODO: Gaussian voxelization
-// TODO: Equations plane & lines
-// TODO: Test -> Direction
-bool AbetweenBandC( Viewer3D<>::RealPoint A,Viewer3D<>::RealPoint B, 
-                                            Viewer3D<>::RealPoint C){
-
-    if (A[0]<std::min(B[0],C[0])||A[0]>std::max(B[0],C[0])){
-        return false;
-    }
-    if (A[1]<std::min(B[1],C[1])||A[0]>std::max(B[1],C[1])){
-        return false;
-    }
-    if (A[2]<std::min(B[2],C[2])||A[2]>std::max(B[2],C[2])){
-        return false;
-    }
-
-    return true;
-}
-
-float distance_to_origin(Viewer3D<>::RealPoint p){
-
-    return sqrtf(p[0]*p[0] + p[1]*p[1] + p[2]*p[2]);
-}
-
-Viewer3D<>::RealPoint normalisePoint(Viewer3D<>::RealPoint p){
-
-    if(distance_to_origin(p)!=0){
-        return p * (1/distance_to_origin(p));
-    }
-    return p;
-}
-
-bool AinsideBoundingBox( Viewer3D<>::RealPoint A,Viewer3D<>::RealPoint min, 
-                                            Viewer3D<>::RealPoint max){
-    if (A[0]<min[0]||A[0]>max[0]){
-        return false;
-    }
-    if (A[1]<min[1]||A[1]>max[1]){
-        return false;
-    }
-    if (A[2]<min[2]||A[2]>max[2]){
-        return false;
-    }
-    return true;
-} 
-
-Viewer3D<>::RealPoint planDirection(Viewer3D<>::RealPoint a, Viewer3D<>::RealPoint b,
-                       Viewer3D<>::RealPoint c, Viewer3D<> &view, Viewer3D<>::RealPoint min,
-                       Viewer3D<>::RealPoint max){
-    Viewer3D<>::RealPoint u = b - a;
-    Viewer3D<>::RealPoint v = c - a;
-  
-  
-    // A x, B y, C z du plan.
-    double mA = u[1]*v[2] - u[2]*v[1];
-    double mB = u[2]*v[0] - u[0]*v[2];
-    double mC = u[0]*v[1] - u[1]*v[0];
-  
-    double mD = -(mA*a[0] + mB*a[1] + mC*a[2]);
-  
-    Viewer3D<>::RealPoint d = u.crossProduct(v);
-
-    Viewer3D<>::RealPoint A = max;
-    A[0] = min[0];
-    Viewer3D<>::RealPoint B = max;
-    Viewer3D<>::RealPoint C = max;
-    C[2] = min[2];
-    Viewer3D<>::RealPoint D = min;
-    D[1] = max[1];
-    Viewer3D<>::RealPoint E = min;
-    Viewer3D<>::RealPoint F = min;
-    F[0] = max[0];
-    Viewer3D<>::RealPoint G = max;
-    G[1] = min[1];
-    Viewer3D<>::RealPoint H = min;
-    H[2] = max[2];
-
-    vector<Viewer3D<>::RealPoint> bBoxArcs;
-
-    vector<Viewer3D<>::RealPoint> planCut;
-
-    bBoxArcs.push_back(B-A);
-    bBoxArcs.push_back(A);
-    bBoxArcs.push_back(C-B);
-    bBoxArcs.push_back(B);
-    bBoxArcs.push_back(D-C);
-    bBoxArcs.push_back(C);
-    bBoxArcs.push_back(D-A);
-    bBoxArcs.push_back(A);
-    bBoxArcs.push_back(E-H);
-    bBoxArcs.push_back(H);
-    bBoxArcs.push_back(F-E);
-    bBoxArcs.push_back(E);
-    bBoxArcs.push_back(G-F);
-    bBoxArcs.push_back(F);
-    bBoxArcs.push_back(H-G);
-    bBoxArcs.push_back(G);
-    bBoxArcs.push_back(H-A);
-    bBoxArcs.push_back(A);
-    bBoxArcs.push_back(E-D);
-    bBoxArcs.push_back(D);
-    bBoxArcs.push_back(F-C);
-    bBoxArcs.push_back(C);
-    bBoxArcs.push_back(G-B);
-    bBoxArcs.push_back(B);
-
-    for (int i = 0; i < bBoxArcs.size(); i += 2)
-    {
-        double t = -((d.dot(bBoxArcs[i+1]) + mD) / d.dot(bBoxArcs[i]));
-        Viewer3D<>::RealPoint point = bBoxArcs[i+1] + (bBoxArcs[i] * t);
-
-        if (AbetweenBandC(point,bBoxArcs[i+1],bBoxArcs[i+1]+bBoxArcs[i])){
-            if (AinsideBoundingBox(point, min, max) ){
-            planCut.push_back(point);
-            }
-        }
-
-    }
-
-    LOG("plancut size:" << planCut.size());
-    for (int i = 0; i < planCut.size(); i++){
-        if (i == planCut.size()-1) {
-            view.addLine(planCut[i], planCut[0], 0.05);
-        }
-        else {
-            view.addLine(planCut[i], planCut[i+1], 0.05);
-        }
-    }
-
-    return d;
-}
-
-vector<Viewer3D<>::RealPoint> orthogonalDirections(Viewer3D<>::RealPoint direction){
-    vector<Viewer3D<>::RealPoint> result;
-
-    if (abs(direction[0])>abs(direction[1])&&abs(direction[0])>abs(direction[2])){
-        Viewer3D<>::RealPoint a(direction[0], direction[2], direction[1]);
-        Viewer3D<>::RealPoint b = a.crossProduct(direction);
-        a = direction.crossProduct(b);
-        result.push_back(normalisePoint(a));
-        result.push_back(normalisePoint(b));
-    }
-    else if (abs(direction[1])>abs(direction[0])&&abs(direction[1])>abs(direction[2])){
-        Viewer3D<>::RealPoint a(direction[2], direction[1], direction[0]);
-        Viewer3D<>::RealPoint b = a.crossProduct(direction);
-        a = direction.crossProduct(b);
-        result.push_back(normalisePoint(a));
-        result.push_back(normalisePoint(b));
-    }
-    else if (abs(direction[2])>abs(direction[0])&&abs(direction[2])>abs(direction[1])){
-
-        Viewer3D<>::RealPoint a(direction[2], direction[1], direction[0]);
-        Viewer3D<>::RealPoint b = a.crossProduct(direction);
-        a = direction.crossProduct(b);
-        result.push_back(normalisePoint(a));
-        result.push_back(normalisePoint(b));
-        
-    } else {//Most unlikely case, but still a posiblity.
-        Viewer3D<>::RealPoint a(-direction[0], direction[1], -direction[2]);
-        Viewer3D<>::RealPoint b = a.crossProduct(direction);
-        a = direction.crossProduct(b);
-        result.push_back(normalisePoint(a));
-        result.push_back(normalisePoint(b));
-    }
-
-    return result;
-}
-
-int DisplayBoundingBox(Viewer3D<> &view, Viewer3D<>::RealPoint min,
-                       Viewer3D<>::RealPoint max)
+void DisplayBoundingBox(Viewer3D<> &view, Viewer3D<>::RealPoint min,
+                        Viewer3D<>::RealPoint max)
 {
     Viewer3D<>::RealPoint A = max;
     A[0] = min[0];
@@ -212,8 +34,6 @@ int DisplayBoundingBox(Viewer3D<> &view, Viewer3D<>::RealPoint min,
     view.addLine(D, E, 0.05);
     view.addLine(C, F, 0.05);
     view.addLine(B, G, 0.05);
-
-    return 0;
 }
 
 // Badouel's algorithm
@@ -274,8 +94,397 @@ bool RayIntersectsTriangle(Viewer3D<>::RealPoint rayOrigin,
     return false;
 }
 
-vector<Viewer3D<>::RealPoint> intersectsBoundingBoxCore(Viewer3D<>::RealPoint rayOrigin, Viewer3D<>::RealPoint rayDirection,
-                            Viewer3D<>::RealPoint min, Viewer3D<>::RealPoint max)
+/* !!! Partie repérage point intérieur mesh !!! */
+
+//TODO : ajouter plan différent x,y,z
+// FIXME: use maps instead of homemade structures.
+Viewer3D<>::RealPoint createStep(Viewer3D<>::RealPoint dir, double ratioX, double ratioY, double ratioZ){
+    Viewer3D<>::RealPoint resultat;
+
+    if(dir[0] == 1)
+        resultat[0] = ratioX;
+    else{
+
+        if(dir[0] == -1)
+            resultat[0] = -ratioX;
+        else resultat[0] = 0;
+
+    }
+
+    if(dir[1] == 1)
+        resultat[1] = ratioY;
+    else{
+
+        if(dir[1] == -1)
+            resultat[1] = -ratioY;
+        else resultat[1] = 0;   
+
+    }
+
+    if(dir[2] == 1)
+        resultat[2] = ratioZ;
+    else{
+
+        if(dir[2] == -1)
+            resultat[2] = -ratioZ;
+        else resultat[2] = 0;
+
+    }
+
+    return resultat;
+}
+
+vector<Viewer3D<>::RealPoint> pointInterieur(Viewer3D<>::RealPoint origin, Viewer3D<>::RealPoint dir, vector<Viewer3D<>::RealPoint> intersects, Viewer3D<>::RealPoint step){
+
+    vector<Viewer3D<>::RealPoint> resultat;
+    vector<indexation> t;
+
+    indexation value;
+    Viewer3D<>::RealPoint point;
+
+    for(int i = 0;i < intersects.size();i++){
+        value.index = i;
+
+        point = origin - intersects[i];
+        value.value = point.norm();
+        t.push_back(value);
+    }
+
+    sort(t.begin(),t.end());
+
+    int count = 0;
+
+    /*if(intersects.size() % 2 == 1){
+        //TODO ajouter bbox
+        //en attendant on retire le dernier element
+        //intersects.pop_back();
+        intersects.push_back(Viewer3D<>::RealPoint(intersects[intersects.size()-1][0] + 2*step[0],intersects[intersects.size()-1][1] + 2*step[1],intersects[intersects.size()-1][2] + 2*step[2]));
+    }*/
+
+    //on part de l'origin
+    point = origin;
+    point[0] = (int)point[0];
+    point[1] = (int)point[1];
+    point[2] = (int)point[2];
+
+    //pour gerer cas step negatif
+    bool modX = step[0] < 0;
+    bool modY = step[1] < 0;
+    bool modZ = step[2] < 0;
+
+    while( count < intersects.size()){
+
+        //temps qu'on est pas dans l'interval
+        while( ((!modX && point[0] <= intersects[t[count].index][0]) || (modX && point[0] >= intersects[t[count].index][0])) &&
+                ((!modY && point[1] <= intersects[t[count].index][1]) || (modY && point[1] >= intersects[t[count].index][1])) && 
+                ((!modZ && point[2] <= intersects[t[count].index][2]) || (modZ && point[2] >= intersects[t[count].index][2])))
+        {
+            point = point + step;
+        }
+
+        //temps qu'on est dans l'intervalle
+        while( ((!modX && point[0] <= intersects[t[count+1].index][0]) || (modX && point[0] >= intersects[t[count+1].index][0])) &&
+                ((!modY && point[1] <= intersects[t[count+1].index][1]) || (modY && point[1] >= intersects[t[count+1].index][1])) && 
+                ((!modZ && point[2] <= intersects[t[count+1].index][2]) || (modZ && point[2] >= intersects[t[count+1].index][2])))
+        {
+            //ajout du point
+            resultat.push_back(point);
+            point = point + step;
+
+        }
+        count += 2;
+    }
+
+    return resultat;
+}
+
+
+bool realPointEquals(Viewer3D<>::RealPoint pointA,Viewer3D<>::RealPoint pointB){
+
+    double tmp;
+    double eps = 0.0000001;
+
+    tmp = pointA[0];
+    if(tmp > pointB[0] + eps || tmp < pointB[0] - eps)
+        return false;
+
+    tmp = pointA[1];
+    if(tmp > pointB[1] + eps || tmp < pointB[1] - eps)
+        return false;
+
+    tmp = pointA[2];
+    if(tmp > pointB[2] + eps || tmp < pointB[2] - eps)
+        return false;
+
+    return true;
+}
+
+/*void conservationSurface(int voxels[][][],int a , int b, int c, int seuil){
+    bool keep = false;
+    for(int i = 0;i < a;i++){
+        for(int j = 0;j < b;j++){
+            for(int k =0;k < c;k++){
+                if(voxels[i][j][k] > seuil){
+
+                    for(int i1 = -1; i1 < 2 && !keep ; i1++){
+                        for(int i2 = -1; i2 < 2 && !keep; i2++){
+                            for(int i3 = -1; i3 < 2 && !keep; i3++){
+                                
+                                if( !(i1 ==  0 && i2 == 0 && i3 == 0)){
+                                    if(voxels[i+i1][j+i2][k+i3] < seuil)
+                                        keep = true;
+                                }
+
+                            }
+                        }
+                    }
+                    if(!keep)
+                        voxels[i][j][k] = 0;
+                    keep = false;
+                }
+
+            }
+        }
+    }
+
+}*/
+
+std::vector<Viewer3D<>::RealPoint> retirerDouble(std::vector<Viewer3D<>::RealPoint> valeurs){
+
+    std::vector<Viewer3D<>::RealPoint> res;
+    int j = 0;
+    bool fin = false;
+
+    for(int i = 0; i < valeurs.size();i++){
+        j = 0;
+        fin = false;
+        while(j < res.size() && !fin){
+
+            if(realPointEquals(res[j],valeurs[i])){
+                fin = true;
+            }
+            else{
+                j++;
+            }
+
+        }
+        if(!fin){
+            res.push_back(valeurs[i]);
+        }
+    }
+
+    return res;
+}
+
+// Algorithms used to create non orthogonal planes.
+
+bool AbetweenBandC(Viewer3D<>::RealPoint A, Viewer3D<>::RealPoint B,
+                   Viewer3D<>::RealPoint C)
+{
+
+    if (A[0] < std::min(B[0], C[0]) || A[0] > std::max(B[0], C[0]))
+    {
+        return false;
+    }
+    if (A[1] < std::min(B[1], C[1]) || A[0] > std::max(B[1], C[1]))
+    {
+        return false;
+    }
+    if (A[2] < std::min(B[2], C[2]) || A[2] > std::max(B[2], C[2]))
+    {
+        return false;
+    }
+
+    return true;
+}
+
+bool AinsideBoundingBox(Viewer3D<>::RealPoint A, Viewer3D<>::RealPoint min,
+                        Viewer3D<>::RealPoint max)
+{
+    if (A[0] < min[0] || A[0] > max[0])
+    {
+        return false;
+    }
+    if (A[1] < min[1] || A[1] > max[1])
+    {
+        return false;
+    }
+    if (A[2] < min[2] || A[2] > max[2])
+    {
+        return false;
+    }
+    return true;
+}
+
+Viewer3D<>::RealPoint planDirection(Viewer3D<>::RealPoint a, Viewer3D<>::RealPoint b,
+                                    Viewer3D<>::RealPoint c, Viewer3D<> &view, Viewer3D<>::RealPoint min,
+                                    Viewer3D<>::RealPoint max)
+{
+    Viewer3D<>::RealPoint u = b - a;
+    Viewer3D<>::RealPoint v = c - a;
+
+    // A x, B y, C z du plan.
+    double mA = u[1] * v[2] - u[2] * v[1];
+    double mB = u[2] * v[0] - u[0] * v[2];
+    double mC = u[0] * v[1] - u[1] * v[0];
+
+    double mD = -(mA * a[0] + mB * a[1] + mC * a[2]);
+
+    Viewer3D<>::RealPoint d = u.crossProduct(v);
+
+    Viewer3D<>::RealPoint A = max;
+    A[0] = min[0];
+    Viewer3D<>::RealPoint B = max;
+    Viewer3D<>::RealPoint C = max;
+    C[2] = min[2];
+    Viewer3D<>::RealPoint D = min;
+    D[1] = max[1];
+    Viewer3D<>::RealPoint E = min;
+    Viewer3D<>::RealPoint F = min;
+    F[0] = max[0];
+    Viewer3D<>::RealPoint G = max;
+    G[1] = min[1];
+    Viewer3D<>::RealPoint H = min;
+    H[2] = max[2];
+
+    vector<Viewer3D<>::RealPoint> bBoxArcs;
+
+    vector<Viewer3D<>::RealPoint> planCut;
+
+    bBoxArcs.push_back(B - A);
+    bBoxArcs.push_back(A);
+    bBoxArcs.push_back(C - B);
+    bBoxArcs.push_back(B);
+    bBoxArcs.push_back(D - C);
+    bBoxArcs.push_back(C);
+    bBoxArcs.push_back(D - A);
+    bBoxArcs.push_back(A);
+    bBoxArcs.push_back(E - H);
+    bBoxArcs.push_back(H);
+    bBoxArcs.push_back(F - E);
+    bBoxArcs.push_back(E);
+    bBoxArcs.push_back(G - F);
+    bBoxArcs.push_back(F);
+    bBoxArcs.push_back(H - G);
+    bBoxArcs.push_back(G);
+    bBoxArcs.push_back(H - A);
+    bBoxArcs.push_back(A);
+    bBoxArcs.push_back(E - D);
+    bBoxArcs.push_back(D);
+    bBoxArcs.push_back(F - C);
+    bBoxArcs.push_back(C);
+    bBoxArcs.push_back(G - B);
+    bBoxArcs.push_back(B);
+
+    for (uint i = 0; i < bBoxArcs.size(); i += 2)
+    {
+        double t = -((d.dot(bBoxArcs[i + 1]) + mD) / d.dot(bBoxArcs[i]));
+        Viewer3D<>::RealPoint point = bBoxArcs[i + 1] + (bBoxArcs[i] * t);
+
+        if (AbetweenBandC(point, bBoxArcs[i + 1], bBoxArcs[i + 1] + bBoxArcs[i]))
+        {
+            if (AinsideBoundingBox(point, min, max))
+            {
+                planCut.push_back(point);
+            }
+        }
+    }
+
+    trace.info() << "plancut size:" << planCut.size();
+    for (uint i = 0; i < planCut.size(); i++)
+    {
+        if (i == planCut.size() - 1)
+        {
+            view.addLine(planCut[i], planCut[0], 0.05);
+        }
+        else
+        {
+            view.addLine(planCut[i], planCut[i + 1], 0.05);
+        }
+    }
+
+    return d;
+}
+
+float distance_to_origin(Viewer3D<>::RealPoint p)
+{
+
+    return sqrtf(p[0] * p[0] + p[1] * p[1] + p[2] * p[2]);
+}
+
+Viewer3D<>::RealPoint normalisePoint(Viewer3D<>::RealPoint p)
+{
+
+    if (distance_to_origin(p) != 0)
+    {
+        return p * (1 / distance_to_origin(p));
+    }
+    return p;
+}
+
+vector<Viewer3D<>::RealPoint> orthogonalDirections(Viewer3D<>::RealPoint direction)
+{
+    vector<Viewer3D<>::RealPoint> result;
+    Viewer3D<>::RealPoint a; 
+    Viewer3D<>::RealPoint b; 
+
+    if (abs(direction[0]) > abs(direction[1]) && abs(direction[0]) > abs(direction[2]))
+    {
+        if (direction[2]==direction[1]){
+            a = Viewer3D<>::RealPoint(direction[2], direction[0], direction[1]);
+            b = Viewer3D<>::RealPoint(direction[1], direction[2], direction[0]);
+        }else {
+            a = Viewer3D<>::RealPoint(direction[0], direction[2], direction[1]);
+            b = a.crossProduct(direction);
+            a = direction.crossProduct(b);
+        }
+        result.push_back(normalisePoint(a));
+        result.push_back(normalisePoint(b));
+    }
+    else if (abs(direction[1]) > abs(direction[0]) && abs(direction[1]) > abs(direction[2]))
+    {
+        if (direction[2]==direction[0]){
+            a = Viewer3D<>::RealPoint(direction[2], direction[0], direction[1]);
+            b = Viewer3D<>::RealPoint(direction[1], direction[2], direction[0]);
+        }else {
+            a = Viewer3D<>::RealPoint(direction[2], direction[1], direction[0]);
+            b = a.crossProduct(direction);
+            a = direction.crossProduct(b);
+        }
+        result.push_back(normalisePoint(a));
+        result.push_back(normalisePoint(b));
+    }
+    else if (abs(direction[2]) > abs(direction[0]) && abs(direction[2]) > abs(direction[1]))
+    {
+        if (direction[0]==direction[1]){
+            a = Viewer3D<>::RealPoint(direction[2], direction[0], direction[1]);
+            b = Viewer3D<>::RealPoint(direction[1], direction[2], direction[0]);
+        }else {
+            a = Viewer3D<>::RealPoint(direction[2], direction[1], direction[0]);
+            b = a.crossProduct(direction);
+            a = direction.crossProduct(b);
+        }
+        result.push_back(normalisePoint(a));
+        result.push_back(normalisePoint(b));
+    }
+    else
+    { //Most unlikely case, but still a posiblity.
+        if (direction[0]==0||direction[1]==0||direction[2]==0){
+            a = Viewer3D<>::RealPoint(direction[2], direction[0], direction[1]);
+            b = Viewer3D<>::RealPoint(direction[1], direction[2], direction[0]);
+        }else {
+        a = Viewer3D<>::RealPoint(-direction[0], direction[1], -direction[2]);
+        b = a.crossProduct(direction);
+        a = direction.crossProduct(b);
+        }
+        result.push_back(normalisePoint(a));
+        result.push_back(normalisePoint(b));
+    }
+
+    return result;
+}
+
+vector<Viewer3D<>::RealPoint> intersectsBoundingBoxCore(Viewer3D<>::RealPoint min, Viewer3D<>::RealPoint max)
 {
     Viewer3D<>::RealPoint A = max;
     A[0] = min[0];
@@ -297,373 +506,155 @@ vector<Viewer3D<>::RealPoint> intersectsBoundingBoxCore(Viewer3D<>::RealPoint ra
     vector<Viewer3D<>::RealPoint> bBoxVertexes;
     //vector<Viewer3D<>::RealPoint> hits;
 
-    bBoxVertexes.push_back(A);bBoxVertexes.push_back(B);bBoxVertexes.push_back(D);
-    bBoxVertexes.push_back(C);bBoxVertexes.push_back(B);bBoxVertexes.push_back(D);
-    
-    bBoxVertexes.push_back(A);bBoxVertexes.push_back(B);bBoxVertexes.push_back(H);
-    bBoxVertexes.push_back(G);bBoxVertexes.push_back(B);bBoxVertexes.push_back(H);
-    
-    bBoxVertexes.push_back(A);bBoxVertexes.push_back(E);bBoxVertexes.push_back(H);
-    bBoxVertexes.push_back(A);bBoxVertexes.push_back(E);bBoxVertexes.push_back(D);
+    bBoxVertexes.push_back(A);
+    bBoxVertexes.push_back(B);
+    bBoxVertexes.push_back(D);
+    bBoxVertexes.push_back(C);
+    bBoxVertexes.push_back(B);
+    bBoxVertexes.push_back(D);
 
-    bBoxVertexes.push_back(C);bBoxVertexes.push_back(F);bBoxVertexes.push_back(D);
-    bBoxVertexes.push_back(E);bBoxVertexes.push_back(F);bBoxVertexes.push_back(D);
+    bBoxVertexes.push_back(A);
+    bBoxVertexes.push_back(B);
+    bBoxVertexes.push_back(H);
+    bBoxVertexes.push_back(G);
+    bBoxVertexes.push_back(B);
+    bBoxVertexes.push_back(H);
 
-    bBoxVertexes.push_back(G);bBoxVertexes.push_back(F);bBoxVertexes.push_back(H);
-    bBoxVertexes.push_back(E);bBoxVertexes.push_back(F);bBoxVertexes.push_back(H);
+    bBoxVertexes.push_back(A);
+    bBoxVertexes.push_back(E);
+    bBoxVertexes.push_back(H);
+    bBoxVertexes.push_back(A);
+    bBoxVertexes.push_back(E);
+    bBoxVertexes.push_back(D);
 
-    bBoxVertexes.push_back(C);bBoxVertexes.push_back(G);bBoxVertexes.push_back(B);
-    bBoxVertexes.push_back(C);bBoxVertexes.push_back(G);bBoxVertexes.push_back(F);
-    
+    bBoxVertexes.push_back(C);
+    bBoxVertexes.push_back(F);
+    bBoxVertexes.push_back(D);
+    bBoxVertexes.push_back(E);
+    bBoxVertexes.push_back(F);
+    bBoxVertexes.push_back(D);
+
+    bBoxVertexes.push_back(G);
+    bBoxVertexes.push_back(F);
+    bBoxVertexes.push_back(H);
+    bBoxVertexes.push_back(E);
+    bBoxVertexes.push_back(F);
+    bBoxVertexes.push_back(H);
+
+    bBoxVertexes.push_back(C);
+    bBoxVertexes.push_back(G);
+    bBoxVertexes.push_back(B);
+    bBoxVertexes.push_back(C);
+    bBoxVertexes.push_back(G);
+    bBoxVertexes.push_back(F);
+
     return bBoxVertexes;
 }
 
 bool intersectsBoundingBox(Viewer3D<>::RealPoint rayOrigin, Viewer3D<>::RealPoint rayDirection,
-                            Viewer3D<>::RealPoint min, Viewer3D<>::RealPoint max){
-                              
-    vector<Viewer3D<>::RealPoint> bBoxVertexes = intersectsBoundingBoxCore(rayOrigin, rayDirection, min, max);
-    
+                           Viewer3D<>::RealPoint min, Viewer3D<>::RealPoint max)
+{
+
+    vector<Viewer3D<>::RealPoint> bBoxVertexes = intersectsBoundingBoxCore(min, max);
+
     Viewer3D<>::RealPoint tmp;
-    
-    int i =0;
+
+    uint i = 0;
     bool match = false;
-    
-     while ((!match) && (i < bBoxVertexes.size())){
-        if (RayIntersectsTriangle(rayOrigin, rayDirection, bBoxVertexes[i], bBoxVertexes[i+1], bBoxVertexes[i+2],tmp))
-        {
+    std::cout << "bbox vertex : " << bBoxVertexes.size() << std::endl;
+    while ((!match) && (i < bBoxVertexes.size()-1))
+    {
+        std::cout << "intersects? " <<  RayIntersectsTriangle(rayOrigin, rayDirection, bBoxVertexes[i], bBoxVertexes[i + 1], bBoxVertexes[i + 2], tmp) << std::endl;
+        if (RayIntersectsTriangle(rayOrigin, rayDirection, bBoxVertexes[i], bBoxVertexes[i + 1], bBoxVertexes[i + 2], tmp))
+        { 
             match = true;
         }
-        i+=3;
+        i += 3;
     }
-
     return match;
 }
 
 vector<Viewer3D<>::RealPoint> intersectsBoundingBoxReturnsPoint(Viewer3D<>::RealPoint rayOrigin, Viewer3D<>::RealPoint rayDirection,
-                            Viewer3D<>::RealPoint min, Viewer3D<>::RealPoint max){
-                              
-    vector<Viewer3D<>::RealPoint> bBoxVertexes = intersectsBoundingBoxCore(rayOrigin, rayDirection, min, max);
-    
-    int i =0;
+                                                                Viewer3D<>::RealPoint min, Viewer3D<>::RealPoint max)
+{
+
+    vector<Viewer3D<>::RealPoint> bBoxVertexes = intersectsBoundingBoxCore(min, max);
+
+    uint i = 0;
     vector<Viewer3D<>::RealPoint> res;
     Viewer3D<>::RealPoint tmp;
-    
-     while ((i < bBoxVertexes.size())){
-        if (RayIntersectsTriangle(rayOrigin, rayDirection, bBoxVertexes[i], bBoxVertexes[i+1], bBoxVertexes[i+2],tmp))
+
+    while ((i < bBoxVertexes.size()-1))
+    {
+        if (RayIntersectsTriangle(rayOrigin, rayDirection, bBoxVertexes[i], bBoxVertexes[i + 1], bBoxVertexes[i + 2], tmp))
         {
+            std::cout << "res "<<res.size()<< " true "<<true<<std::endl ;
             res.push_back(tmp);
         }
-        i+=3;
+        i += 3;
     }
 
     return res;
 }
 
-
-
-
 void originPointsRecursive(Viewer3D<>::RealPoint o, Viewer3D<>::RealPoint dir, Viewer3D<>::RealPoint a, Viewer3D<>::RealPoint b,
-                            vector<Viewer3D<>::RealPoint> &folder, Viewer3D<>::RealPoint min, Viewer3D<>::RealPoint max){
+                           vector<Viewer3D<>::RealPoint> &folder, Viewer3D<>::RealPoint min, Viewer3D<>::RealPoint max)
+{       
 
-    if(std::find(folder.begin(), folder.end(), o) == folder.end()) {
-        if(intersectsBoundingBox(o,dir,min,max)){
+    if (std::find(folder.begin(), folder.end(), o) == folder.end())
+    {   
+        std::cout << "foldersize : " << folder.size() << std::endl;
+        
+        if (intersectsBoundingBox(o, dir, min, max))
+        {
+            
             folder.push_back(o);
 
-            originPointsRecursive(o+a,dir,a,b,folder,min,max);
-            originPointsRecursive(o-a,dir,a,b,folder,min,max);
-            originPointsRecursive(o+b,dir,a,b,folder,min,max);
-            originPointsRecursive(o-b,dir,a,b,folder,min,max);
-        }   
+            originPointsRecursive(o + a, dir, a, b, folder, min, max);
+            originPointsRecursive(o - a, dir, a, b, folder, min, max);
+            originPointsRecursive(o + b, dir, a, b, folder, min, max);
+            originPointsRecursive(o - b, dir, a, b, folder, min, max);
+        }
     }
+}
 
+Viewer3D<>::RealPoint RayIntersectsPlane(Viewer3D<>::RealPoint rayOrigin,
+                                        Viewer3D<>::RealPoint rayDirection,
+                                        Viewer3D<>::RealPoint a,
+                                        Viewer3D<>::RealPoint b,
+                                        Viewer3D<>::RealPoint c)
+{
+    Viewer3D<>::RealPoint ab = b - a;
+    Viewer3D<>::RealPoint ac = c - a;
+
+    Viewer3D<>::RealPoint normal = ab.crossProduct(ac);
+
+    float d = -a.dot(normal);
+
+    float t = -((normal.dot(rayOrigin) + d) / normal.dot(rayDirection));
+
+    // Calcul point intersection
+    Viewer3D<>::RealPoint point = rayOrigin + (rayDirection * t);
+
+    return point;
 }
 
 vector<Viewer3D<>::RealPoint> originPoints(Viewer3D<>::RealPoint origin, Viewer3D<>::RealPoint normale,
-                                                Viewer3D<>::RealPoint min, Viewer3D<>::RealPoint max, double delta =1.0){
+                                           Viewer3D<>::RealPoint min, Viewer3D<>::RealPoint max, double delta)
+{
     vector<Viewer3D<>::RealPoint> result;
 
-    vector<Viewer3D<>::RealPoint> d1d2=orthogonalDirections(normale);
+    vector<Viewer3D<>::RealPoint> d1d2 = orthogonalDirections(normale);
 
-    originPointsRecursive(origin,delta*normalisePoint(normale),delta*d1d2[0],delta*d1d2[1],result,min,max);
+    originPointsRecursive(origin, delta * normalisePoint(normale), delta * d1d2[0], delta * d1d2[1], result, min, max);
 
-    return result;    
-}
-
-int main(int argc, char **argv)
-{
-    // File name of the mesh to import.
-    std::string inputFile;
-
-    // Define if the voxelisation will be Gaussian or resolution based.
-    bool gaussian = true;
-
-    // Resolution on the X axis.
-    int horizontalResolution;
-
-    // Resolution on the Y axis.
-    int verticalResolution;
-
-    // Resolution on the Z axis.
-    int forwardResolution;
-
-    vector<Z3i::RealPoint> intersectionPoints;
-
-    // Checking the arguments.
-    // If there isn't a file name as argument, stop the execution.
-    if (argc != 2 && argc != 5)
-    {
-        trace.info() << "Usage: display3D file [hres] [vres] [zres]" << std::endl
-                     << "Now exiting..." << std::endl;
-
-        return 0;
-    }
-    else
-    {
-        // Get the file name to import the mesh.
-        inputFile = argv[1];
-        trace.info() << "Input file: " << inputFile << std::endl;
+    if (result.size()==0){
+        std::cout << "d1d2 : " << d1d2[0] << "," << d1d2[1] <<std::endl;
+        Viewer3D<>::RealPoint new_origin = RayIntersectsPlane( min+max, normale, origin, (origin+d1d2[0]), (origin+d1d2[1]));
+        std::cout << "We failed at calculating points of the origin plane." << std::endl;
+        std::cout << "Origin was moved to :" << new_origin[0] << "," << new_origin[1] << "," << new_origin[2] << std::endl;
+        originPointsRecursive(new_origin, delta * normalisePoint(normale), delta * d1d2[0], delta * d1d2[1], result, min, max);
     }
 
-    if (argc == 5)
-    {
-        horizontalResolution = atoi(argv[2]);
-        verticalResolution = atoi(argv[3]);
-        forwardResolution = atoi(argv[4]);
-        gaussian = false;
-
-        LOG("X, Y, Z:" << horizontalResolution << " " << verticalResolution << " " << forwardResolution);
-    }
-
-    // qT Application hosting the viewer.
-    QApplication application(argc, argv);
-
-    // 3D Viewer.
-    Viewer3D<> viewer;
-    viewer.show();
-
-    // Since the input points are not necessary integers we use the PointD3D from Display3D.
-    Mesh<Viewer3D<>::RealPoint> mesh;
-
-    // Importing the file
-    trace.info() << "Importing..." << std::endl;
-
-    mesh << inputFile;
-
-    trace.info() << "Importing done..." << std::endl;
-    trace.info() << "Number of vertices: " << mesh.nbVertex() << std::endl;
-    trace.info() << "Number of faces: " << mesh.nbFaces() << std::endl;
-
-    // Getting the bounding box.
-    std::pair<Viewer3D<>::RealPoint, Viewer3D<>::RealPoint>
-        boundingBox = mesh.getBoundingBox();
-
-    double xSize = abs(boundingBox.second[0] - boundingBox.first[0]);
-    double ySize = abs(boundingBox.second[1] - boundingBox.first[1]);
-    double zSize = abs(boundingBox.second[2] - boundingBox.first[2]);
-
-    trace.info() << "Mesh size: " << xSize << "; " << ySize << "; " << zSize << std::endl;
-
-    double scaleFactor = 1.;
-
-    scaleFactor = 1. / (std::min(xSize, std::min(ySize, zSize)));
-
-    trace.info() << "Scale factor: " << scaleFactor << std::endl;
-
-    // Change the scale of the mesh if it's too small.
-    mesh.changeScale(scaleFactor);
-
-    boundingBox = mesh.getBoundingBox();
-
-    xSize = abs(boundingBox.second[0] - boundingBox.first[0]);
-    ySize = abs(boundingBox.second[1] - boundingBox.first[1]);
-    zSize = abs(boundingBox.second[2] - boundingBox.first[2]);
-
-    trace.info() << "Mesh size: " << xSize << "; " << ySize << "; " << zSize << std::endl;
-
-    //DisplayBoundingBox(viewer, boundingBox.first, boundingBox.second);
-
-    trace.info() << "Bounding box: " << std::endl
-                 << boundingBox.first << std::endl
-                 << boundingBox.second << std::endl;
-
-    Z3i::RealPoint intersection;
-
-    double xStep = ((boundingBox.second[0] - boundingBox.first[0]) / double(horizontalResolution - 1));
-    double yStep = ((boundingBox.second[1] - boundingBox.first[1]) / double(verticalResolution - 1));
-    double zStep = ((boundingBox.second[2] - boundingBox.first[2]) / double(forwardResolution - 1));
-
-    if (!gaussian)
-    {
-        // Raytracing from under.
-        Z3i::RealPoint rayDirection = Z3i::RealPoint(0, 1, 0);
-
-        LOG("Min bbox:" << boundingBox.first[0] << " " << boundingBox.first[1] << " " << boundingBox.first[2]);
-        LOG("Max bbox:" << boundingBox.second[0] << " " << boundingBox.second[1] << " " << boundingBox.second[2]);
-
-        for (double x = boundingBox.first[0]; x <= boundingBox.second[0]; x += xStep)
-        {
-            for (double z = boundingBox.first[2]; z <= boundingBox.second[2]; z += zStep)
-            {
-                Z3i::RealPoint rayOrigin(x, boundingBox.first[1] - 1, z);
-
-                intersectionPoints.push_back(rayOrigin);
-                intersectionPoints.push_back(rayOrigin + rayDirection * 3);
-                // Test if the test ray can intersect anything.
-                for (int i = 0; i < mesh.nbFaces(); i++)
-                {
-                    // If a face is intersected, set it's color to red.
-                    if (RayIntersectsTriangle(rayOrigin, rayDirection, mesh.getVertex(mesh.getFace(i)[0]), mesh.getVertex(mesh.getFace(i)[1]), mesh.getVertex(mesh.getFace(i)[2]), intersection))
-                    {
-                        mesh.setFaceColor(i, Color(255, 0, 0));
-                        trace.info() << "Intersection at: (" << intersection[0] << "," << intersection[1] << "," << intersection[2] << ")" << std::endl;
-                    }
-                }
-            }
-        }
-
-        // Raytracing from in front of.
-        rayDirection = Z3i::RealPoint(0, 0, -1);
-
-        for (double x = boundingBox.first[0]; x <= boundingBox.second[0]; x += xStep)
-        {
-            for (double y = boundingBox.first[1]; y <= boundingBox.second[1]; y += yStep)
-            {
-                Z3i::RealPoint rayOrigin(x, y, boundingBox.first[2] + 1);
-
-                intersectionPoints.push_back(rayOrigin);
-                intersectionPoints.push_back(rayOrigin + rayDirection * 3);
-                // Test if the test ray can intersect anything.
-                for (int i = 0; i < mesh.nbFaces(); i++)
-                {
-                    // If a face is intersected, set it's color to red.
-                    if (RayIntersectsTriangle(rayOrigin, rayDirection, mesh.getVertex(mesh.getFace(i)[0]), mesh.getVertex(mesh.getFace(i)[1]), mesh.getVertex(mesh.getFace(i)[2]), intersection))
-                    {
-                        // intersectionPoints.push_back(rayOrigin);
-                        // intersectionPoints.push_back(rayOrigin + rayDirection);
-                        mesh.setFaceColor(i, Color(255, 0, 0));
-                        trace.info() << "Intersection at: (" << intersection[0] << "," << intersection[1] << "," << intersection[2] << ")" << std::endl;
-                    }
-                }
-            }
-        }
-
-        // Raytracing from the left.
-        rayDirection = Z3i::RealPoint(1, 0, 0);
-
-        for (double y = boundingBox.first[1]; y <= boundingBox.second[1]; y += yStep)
-        {
-            for (double z = boundingBox.first[2]; z <= boundingBox.second[2]; z += zStep)
-            {
-                Z3i::RealPoint rayOrigin(boundingBox.first[0] - 1, y, z);
-
-                intersectionPoints.push_back(rayOrigin);
-                intersectionPoints.push_back(rayOrigin + rayDirection * 3);
-                // Test if the test ray can intersect anything.
-                for (int i = 0; i < mesh.nbFaces(); i++)
-                {
-                    // If a face is intersected, set it's color to red.
-                    if (RayIntersectsTriangle(rayOrigin, rayDirection, mesh.getVertex(mesh.getFace(i)[0]), mesh.getVertex(mesh.getFace(i)[1]), mesh.getVertex(mesh.getFace(i)[2]), intersection))
-                    {
-                        mesh.setFaceColor(i, Color(255, 0, 0));
-                        trace.info() << "Intersection at: (" << intersection[0] << "," << intersection[1] << "," << intersection[2] << ")" << std::endl;
-                    }
-                }
-            }
-        }
-    }
-    else
-    {
-        // Gaussian voxelization
-        // TODO: Do the actual voxelization after unit tests
-
-        // NOTE: Unit tests
-        Z3i::RealPoint rayOrigin;
-        Z3i::RealPoint rayDirection;
-
-        // NOTE: ray orthogonal to a face
-        // rayOrigin = Z3i::RealPoint(0, 0, 1);
-        // rayDirection = Z3i::RealPoint(0, 0, -1);
-
-        // NOTE: ray orthogonal to an edge
-        // rayOrigin = Z3i::RealPoint(0, -0.5, 0);
-        // rayDirection = Z3i::RealPoint(0, 0, -1);
-
-        // NOTE: ray tangent to an edge
-        // rayOrigin = Z3i::RealPoint(-1, -0.5, 0);
-        // rayDirection = Z3i::RealPoint(1, 0, 0);
-
-        // NOTE: ray tangent to a vertex
-        // rayOrigin = Z3i::RealPoint(-1, 0.5, 0);
-        // rayDirection = Z3i::RealPoint(1, 0, 0);
-
-        // NOTE: ray orthogonal to the edge of 2 triangles
-        // rayOrigin = Z3i::RealPoint(0, 0, 1);
-        // rayDirection = Z3i::RealPoint(0, 0, -1);
-
-        // NOTE: ray tangent to the edge of 2 triangles
-        // rayOrigin = Z3i::RealPoint(0, -1, 0);
-        // rayDirection = Z3i::RealPoint(0, 1, 0);
-
-        // NOTE: ray tangent to the edge of 2 triangles
-        // rayOrigin = Z3i::RealPoint(-1, 0.5, 0);
-        // rayDirection = Z3i::RealPoint(1, 0, 0);
-
-        // NOTE: ray orthogonal to the edge of 2 triangles
-        // rayOrigin = Z3i::RealPoint(0, 0.5, 1);
-        // rayDirection = Z3i::RealPoint(0, 0, -1);
-
-        // NOTE: ray not hitting anything
-        rayOrigin = Z3i::RealPoint(0.5, 0.5, 0.5);
-        rayDirection = Z3i::RealPoint(0, 0, -1);
-
-        intersectionPoints.push_back(rayOrigin);
-        intersectionPoints.push_back(rayOrigin + rayDirection * 3);
-
-        //planDirection(mesh.getVertex(mesh.getFace(0)[0]), mesh.getVertex(mesh.getFace(0)[1]), mesh.getVertex(mesh.getFace(0)[2]),viewer,boundingBox.first, boundingBox.second);
-
-      
-        // Test if the test ray can intersect anything.
-        for (int i = 0; i < mesh.nbFaces(); i++)
-        {
-            //If a face is intersected, set it's color to red.
-            if (RayIntersectsTriangle(rayOrigin, rayDirection, mesh.getVertex(mesh.getFace(i)[0]), mesh.getVertex(mesh.getFace(i)[1]), mesh.getVertex(mesh.getFace(i)[2]), intersection))
-            {
-                mesh.setFaceColor(i, Color(255, 0, 0));
-                trace.info() << "Intersection at: (" << intersection[0] << "," << intersection[1] << "," << intersection[2] << ")" << std::endl;
-            }
-        }
-    }
-
-    
-
-    //intersectionPoints.push_back(boundingBox.first);
-    //intersectionPoints.push_back(boundingBox.second);
-    Viewer3D<>::RealPoint d = boundingBox.second-boundingBox.first;
-    vector<Viewer3D<>::RealPoint> testingVectors = originPoints(boundingBox.first, d, boundingBox.first, boundingBox.second);
-
-    for (int k=0;k < testingVectors.size();k++){
-        for (int i = 0; i < mesh.nbFaces(); i++)
-        {
-            //If a face is intersected, set it's color to red.
-            if (RayIntersectsTriangle(testingVectors[k], d, mesh.getVertex(mesh.getFace(i)[0]), mesh.getVertex(mesh.getFace(i)[1]), mesh.getVertex(mesh.getFace(i)[2]), intersection))
-            {
-                mesh.setFaceColor(i, Color(255, 0, 0));
-                trace.info() << "Intersection at: (" << intersection[0] << "," << intersection[1] << "," << intersection[2] << ")" << std::endl;
-            }
-        }
-    }
-
-    // Push the mesh into the viewer.
-    viewer << mesh;
-
-
-    for (int i = 0; i < testingVectors.size(); i += 2)
-    {
-        viewer.addLine(testingVectors[i], testingVectors[i]+(d*2), 0.03+i);
-    }
-
-    viewer << Viewer3D<>::updateDisplay;
-
-    // Return the qT application.
-    return application.exec();
+    return result;
 }
