@@ -425,7 +425,7 @@ int main(int argc, char **argv)
         }
 
         // Raytracing from in front of.
-        rayDirection = Z3i::RealPoint(0, 0, -1);
+        rayDirection = Z3i::RealPoint(0, 0, 1);
 
         stepInterieur = createStep(rayDirection, 1, 1, 1);
 
@@ -433,7 +433,7 @@ int main(int argc, char **argv)
         {
             for (int y = boundingBox.first[1] - 1; y <= boundingBox.second[1] + 1; y++)
             {
-                Z3i::RealPoint rayOrigin(x, y, boundingBox.first[2] + 1);
+                Z3i::RealPoint rayOrigin(x, y, boundingBox.first[2] - 1);
 
                 intersectionPoints.push_back(rayOrigin);
                 intersectionPoints.push_back(rayOrigin + rayDirection * 3);
@@ -458,7 +458,7 @@ int main(int argc, char **argv)
                 }
 
                 //calcul des point a l'interieur
-                // pointInterieurs.push_back(pointInterieur(rayOrigin, rayDirection, intersectionsVecteur, stepInterieur));
+                pointInterieurs.push_back(pointInterieur(rayOrigin, rayDirection, intersectionsVecteur, stepInterieur));
                 intersectionsVecteur.clear();
             }
         }
@@ -499,7 +499,7 @@ int main(int argc, char **argv)
                 }
 
                 //calcul des point a l'interieur
-                // pointInterieurs.push_back(pointInterieur(rayOrigin, rayDirection, intersectionsVecteur, stepInterieur));
+                pointInterieurs.push_back(pointInterieur(rayOrigin, rayDirection, intersectionsVecteur, stepInterieur));
                 intersectionsVecteur.clear();
             }
         }
@@ -537,12 +537,33 @@ int main(int argc, char **argv)
         viewer.addLine(intersectionPoints[i], intersectionPoints[i + 1], 0.03);
     }
 
+    //gestion des points interieur/voxels
+    int count = 0;
+    int seuil = 0;
+
+    int tabX = (int)abs(boundingBox.first[0] - boundingBox.second[0])+1;
+    int tabY = (int)abs(boundingBox.first[1] - boundingBox.second[1])+1;
+    int tabZ = (int)abs(boundingBox.first[2] - boundingBox.second[2])+1;
+
+    int voxels[tabX][tabY][tabZ] = {};
     //print des points a l'interieur
-    for (uint g = 0; g < pointInterieurs.size(); g++)
-    {
-        for (uint h = 0; h < pointInterieurs[g].size(); h++)
-        {
+    for(int g = 0; g < pointInterieurs.size();g++){
+        for(int h = 0; h < pointInterieurs[g].size() ;h++){  
             viewer.addCube(pointInterieurs[g][h]);
+            //on stock au coordonné g,h,X les points (et leurs nombre d'occurences)
+            voxels[(int)round(pointInterieurs[g][h][0] - boundingBox.first[0])][(int)round(pointInterieurs[g][h][1] - boundingBox.first[1])][(int)round(pointInterieurs[g][h][2] - boundingBox.first[2])] += 1;
+            count ++;
+        }
+    }
+
+    //voxels = conservationSurface(voxels);
+    //todo retrouver offset
+    for(int i = 0;i < tabX;i++){
+        for(int j = 0; j < tabY;j++){
+            for(int k = 0;k < tabZ;k++){
+                if(voxels[i][j][k] > seuil)
+                    viewer.addCube(Z3i::RealPoint(i, j, k ));
+            }
         }
     }
 
