@@ -59,11 +59,14 @@ int main(int argc, char **argv)
 
     std::vector<std::vector<Z3i::RealPoint>> pointInterieurs;
 
+    // Boolean to export the result to a .vox file
+    bool exportToFile = false;
+
     // Checking the arguments.
     // If there isn't a file name as argument, stop the execution.
     if (argc < 2)
     {
-        DGtal::trace.info() << "Usage: display3D file" << std::endl
+        DGtal::trace.info() << "Usage: Voxelizer file" << std::endl
                             << "Options:" << std::endl
                             << "[--resolution=\"x y z\"]\t\tDefine the resolution used to voxelize" << std::endl
                             << "[--normalize=size]\t\tDefine the minimal size of the mesh" << std::endl
@@ -71,6 +74,7 @@ int main(int argc, char **argv)
                             << "[--origin=\"x y z\"]\t\tDefine the origin of a non orthogonal plane." << std::endl
                             << "[--direction=\"x y z\"]\t\tDefine the direction of a non orthogonal plane." << std::endl
                             << "[--delta=value]\t\t\tDefine the delta of a non orthogonal plane." << std::endl
+                            << "[--export]\t\t\tDefine if the result must be exported to a .vox file." << std::endl
                             << "Now exiting..." << std::endl;
 
         return 0;
@@ -233,12 +237,18 @@ int main(int argc, char **argv)
         DGtal::trace.info() << "Plane delta: " << planeDelta << std::endl;
     }
 
+    argsIterator = argments.find("--export");
+
+    if (argsIterator != argments.end())
+    {
+        exportToFile = true;
+    }
+
     // qT Application hosting the viewer.
     QApplication application(argc, argv);
 
     // 3D Viewer.
     Viewer3D<> viewer;
-    viewer.show();
 
     // Since the input points are not necessary integers we use the PointD3D from Display3D.
     Mesh<Viewer3D<>::RealPoint> mesh;
@@ -592,28 +602,73 @@ int main(int argc, char **argv)
     std::cout
         << "Computation time: " << duration.count() << " milliseconds with " << omp_get_max_threads() << " threads." << std::endl;
 
-    std::ofstream file("result.vox");
-
-    if (file.is_open())
+    if (exportToFile)
     {
-        for (uint i = 0; i < pointInterieurs.size(); i++)
+        std::string exportFileName;
+        int dirSize = 0;
+        int nameSize = 0;
+        for (int i = 0; i < inputFile.size(); i++)
         {
-            for (uint j = 0; j < pointInterieurs[i].size(); j++)
+            if (inputFile.at(i) == '/')
             {
-                file << pointInterieurs[i][j][0] << " " << pointInterieurs[i][j][1] << " " << pointInterieurs[i][j][2] << std::endl;
+                dirSize = i;
+            }
+
+            if (inputFile.at(i) == '.')
+            {
+                nameSize = i - dirSize - 1;
             }
         }
 
-        file.close();
+        exportFileName = inputFile.substr(dirSize + 1, nameSize);
 
-        std::cout << "Succesfully exported voxels to result.vox" << std::endl;
-    }
-    else
-    {
-        std::cout << "Failed to export voxels." << std::endl;
+        if (gaussian)
+        {
+            exportFileName.append("_gaussian");
+            exportFileName.append("_");
+            exportFileName.append(std::to_string(int(boundingBox.second[0] - boundingBox.first[0])));
+            exportFileName.append("_");
+            exportFileName.append(std::to_string(int(boundingBox.second[1] - boundingBox.first[1])));
+            exportFileName.append("_");
+            exportFileName.append(std::to_string(int(boundingBox.second[2] - boundingBox.first[2])));
+        }
+        else
+        {
+            exportFileName.append("_resolution");
+            exportFileName.append("_");
+            exportFileName.append(std::to_string(horizontalResolution));
+            exportFileName.append("_");
+            exportFileName.append(std::to_string(verticalResolution));
+            exportFileName.append("_");
+            exportFileName.append(std::to_string(forwardResolution));
+        }
+
+        exportFileName.append(".vox");
+
+        std::ofstream file(exportFileName);
+
+        if (file.is_open())
+        {
+            for (uint i = 0; i < pointInterieurs.size(); i++)
+            {
+                for (uint j = 0; j < pointInterieurs[i].size(); j++)
+                {
+                    file << pointInterieurs[i][j][0] << " " << pointInterieurs[i][j][1] << " " << pointInterieurs[i][j][2] << std::endl;
+                }
+            }
+
+            file.close();
+
+            std::cout << "Succesfully exported voxels to " << exportFileName << std::endl;
+        }
+        else
+        {
+            std::cout << "Failed to export voxels." << std::endl;
+        }
     }
 
     viewer << Viewer3D<>::updateDisplay;
+    viewer.show();
 
     // Return the qT application.
     return application.exec();

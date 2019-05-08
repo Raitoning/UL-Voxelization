@@ -12,8 +12,10 @@ add_definitions(-g)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
 
-ADD_EXECUTABLE(display3D src/display3D.cpp src/Algorithms.cpp)
-ADD_EXECUTABLE(tests src/Tests.cpp src/Algorithms.cpp)
+ADD_EXECUTABLE(Voxelizer src/Voxelizer.cpp src/Algorithms.cpp)
+ADD_EXECUTABLE(Tests src/Tests.cpp src/Algorithms.cpp)
+ADD_EXECUTABLE(Viewer src/Viewer.cpp)
 
-TARGET_LINK_LIBRARIES(display3D ${DGTAL_LIBRARIES})
-TARGET_LINK_LIBRARIES(tests ${DGTAL_LIBRARIES})
+TARGET_LINK_LIBRARIES(Voxelizer ${DGTAL_LIBRARIES})
+TARGET_LINK_LIBRARIES(Tests ${DGTAL_LIBRARIES})
+TARGET_LINK_LIBRARIES(Viewer ${DGTAL_LIBRARIES})
