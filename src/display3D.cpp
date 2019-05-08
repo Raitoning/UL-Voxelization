@@ -286,8 +286,6 @@ int main(int argc, char **argv)
                         << boundingBox.first << std::endl
                         << boundingBox.second << std::endl;
 
-    Z3i::RealPoint intersection;
-
     double xStep = ((boundingBox.second[0] - boundingBox.first[0]) / double(horizontalResolution - 1));
     double yStep = ((boundingBox.second[1] - boundingBox.first[1]) / double(verticalResolution - 1));
     double zStep = ((boundingBox.second[2] - boundingBox.first[2]) / double(forwardResolution - 1));
@@ -306,6 +304,8 @@ int main(int argc, char **argv)
         {
             for (double z = boundingBox.first[2]; z <= boundingBox.second[2] + epsilon; z += zStep)
             {
+                Z3i::RealPoint intersection;
+
                 Z3i::RealPoint rayOrigin(x, boundingBox.first[1] - 1, z);
 
                 intersectionPoints.push_back(rayOrigin);
@@ -333,6 +333,8 @@ int main(int argc, char **argv)
         {
             for (double y = boundingBox.first[1]; y <= boundingBox.second[1] + epsilon; y += yStep)
             {
+                Z3i::RealPoint intersection;
+
                 Z3i::RealPoint rayOrigin(x, y, boundingBox.first[2] + 1);
 
                 intersectionPoints.push_back(rayOrigin);
@@ -361,6 +363,8 @@ int main(int argc, char **argv)
         {
             for (double z = boundingBox.first[2]; z <= boundingBox.second[2] + epsilon; z += zStep)
             {
+                Z3i::RealPoint intersection;
+
                 Z3i::RealPoint rayOrigin(boundingBox.first[0] - 1, y, z);
 
                 intersectionPoints.push_back(rayOrigin);
@@ -391,36 +395,36 @@ int main(int argc, char **argv)
 
         for (int x = boundingBox.first[0] - 1; x <= boundingBox.second[0] + 1; x++)
         {
-
-            for (int z = boundingBox.first[2] - 1; z <= boundingBox.second[2] + 1; z++)
+#pragma omp parallel for
+            for (int z = int(boundingBox.first[2] - 1); z <= int(boundingBox.second[2] + 1); z++)
             {
+                std::vector<Z3i::RealPoint> intersectionsVecteur;
+                Z3i::RealPoint intersection;
+
                 Z3i::RealPoint rayOrigin(x, boundingBox.first[1] - 1, z);
 
-                intersectionPoints.push_back(rayOrigin);
-                intersectionPoints.push_back(rayOrigin + rayDirection * (boundingBox.second[1] - boundingBox.first[1] + 2));
-
                 // Test if the test ray can intersect anything.
-#pragma omp parallel for ordered
                 for (uint i = 0; i < mesh.nbFaces(); i++)
                 {
                     // If a face is intersected, set it's color to red.
                     if (RayIntersectsTriangle(rayOrigin, rayDirection, mesh.getVertex(mesh.getFace(i)[0]), mesh.getVertex(mesh.getFace(i)[1]), mesh.getVertex(mesh.getFace(i)[2]), intersection))
                     {
-                        mesh.setFaceColor(i, Color(255, 0, 0));
-                        DGtal::trace.info() << "Intersection at: (" << intersection[0] << "," << intersection[1] << "," << intersection[2] << ")"
-                                            << "(Thread #" << omp_get_thread_num() << ")" << std::endl;
+                        // mesh.setFaceColor(i, Color(255, 0, 0));
+                        // DGtal::trace.info() << "Intersection at: (" << intersection[0] << "," << intersection[1] << "," << intersection[2] << ")"
+                        //                     << "(Thread #" << omp_get_thread_num() << ")" << std::endl;
 
                         //on recupère les points d'intersection d'un vecteur
-#pragma omp ordered
-                        {
-                            intersectionsVecteur.push_back(intersection);
-                        }
+                        intersectionsVecteur.push_back(intersection);
                     }
                 }
 
                 //calcul des point a l'interieur
-                pointInterieurs.push_back(pointInterieur(rayOrigin, rayDirection, intersectionsVecteur, stepInterieur));
-                intersectionsVecteur.clear();
+#pragma omp critical
+                {
+                    pointInterieurs.push_back(pointInterieur(rayOrigin, rayDirection, intersectionsVecteur, stepInterieur));
+                    intersectionPoints.push_back(rayOrigin);
+                    intersectionPoints.push_back(rayOrigin + rayDirection * (boundingBox.second[1] - boundingBox.first[1] + 2));
+                }
             }
         }
 
@@ -431,39 +435,40 @@ int main(int argc, char **argv)
 
         for (int x = boundingBox.first[0] - 1; x <= boundingBox.second[0] + 1; x++)
         {
-            for (int y = boundingBox.first[1] - 1; y <= boundingBox.second[1] + 1; y++)
+#pragma omp parallel for
+            for (int y = int(boundingBox.first[1] - 1); y <= int(boundingBox.second[1] + 1); y++)
             {
+                std::vector<Z3i::RealPoint> intersectionsVecteur;
+                Z3i::RealPoint intersection;
+
                 Z3i::RealPoint rayOrigin(x, y, boundingBox.first[2] - 1);
 
-                intersectionPoints.push_back(rayOrigin);
-                intersectionPoints.push_back(rayOrigin + rayDirection * (boundingBox.second[2] - boundingBox.first[2] + 2));
-
                 // Test if the test ray can intersect anything.
-#pragma omp parallel for ordered
                 for (uint i = 0; i < mesh.nbFaces(); i++)
                 {
                     // If a face is intersected, set it's color to red.
                     if (RayIntersectsTriangle(rayOrigin, rayDirection, mesh.getVertex(mesh.getFace(i)[0]), mesh.getVertex(mesh.getFace(i)[1]), mesh.getVertex(mesh.getFace(i)[2]), intersection))
                     {
-                        mesh.setFaceColor(i, Color(255, 0, 0));
-                        DGtal::trace.info() << "Intersection at: (" << intersection[0] << "," << intersection[1] << "," << intersection[2] << ")"
-                                            << "(Thread #" << omp_get_thread_num() << ")" << std::endl;
+                        // mesh.setFaceColor(i, Color(255, 0, 0));
+                        // DGtal::trace.info() << "Intersection at: (" << intersection[0] << "," << intersection[1] << "," << intersection[2] << ")"
+                        //                     << "(Thread #" << omp_get_thread_num() << ")" << std::endl;
 
                         //on recupère les points d'intersection d'un vecteur
-#pragma omp ordered
-                        {
-                            intersectionsVecteur.push_back(intersection);
-                        }
+                        intersectionsVecteur.push_back(intersection);
                     }
                 }
 
                 //calcul des point a l'interieur
-                pointInterieurs.push_back(pointInterieur(rayOrigin, rayDirection, intersectionsVecteur, stepInterieur));
-                intersectionsVecteur.clear();
+#pragma omp critical
+                {
+                    pointInterieurs.push_back(pointInterieur(rayOrigin, rayDirection, intersectionsVecteur, stepInterieur));
+                    intersectionPoints.push_back(rayOrigin);
+                    intersectionPoints.push_back(rayOrigin + rayDirection * (boundingBox.second[0] - boundingBox.first[0] + 2));
+                }
             }
         }
 
-        // Raytracing from the left.
+        //         // Raytracing from the left.
         rayDirection = Z3i::RealPoint(1, 0, 0);
 
         stepInterieur = createStep(rayDirection, 1, 1, 1);
@@ -471,36 +476,36 @@ int main(int argc, char **argv)
         for (int y = boundingBox.first[1] - 1; y <= boundingBox.second[1] + 1; y++)
         {
 
+#pragma omp parallel for
             for (int z = int(boundingBox.first[2] - 1); z <= int(boundingBox.second[2] + 1); z++)
             {
+                std::vector<Z3i::RealPoint> intersectionsVecteur;
+                Z3i::RealPoint intersection;
+
                 Z3i::RealPoint rayOrigin(boundingBox.first[0] - 1, y, z);
 
-                intersectionPoints.push_back(rayOrigin);
-                intersectionPoints.push_back(rayOrigin + rayDirection * (boundingBox.second[0] - boundingBox.first[0] + 2));
-
                 // Test if the test ray can intersect anything.
-
-#pragma omp parallel for ordered
                 for (uint i = 0; i < mesh.nbFaces(); i++)
                 {
                     // If a face is intersected, set it's color to red.
                     if (RayIntersectsTriangle(rayOrigin, rayDirection, mesh.getVertex(mesh.getFace(i)[0]), mesh.getVertex(mesh.getFace(i)[1]), mesh.getVertex(mesh.getFace(i)[2]), intersection))
                     {
-                        mesh.setFaceColor(i, Color(255, 0, 0));
-                        DGtal::trace.info() << "Intersection at: (" << intersection[0] << "," << intersection[1] << "," << intersection[2] << ")"
-                                            << "(Thread #" << omp_get_thread_num() << ")" << std::endl;
+                        // mesh.setFaceColor(i, Color(255, 0, 0));
+                        // DGtal::trace.info() << "Intersection at: (" << intersection[0] << "," << intersection[1] << "," << intersection[2] << ")"
+                        //                     << "(Thread #" << omp_get_thread_num() << ")" << std::endl;
 
                         //on recupère les points d'intersection d'un vecteur
-#pragma omp ordered
-                        {
-                            intersectionsVecteur.push_back(intersection);
-                        }
+                        intersectionsVecteur.push_back(intersection);
                     }
                 }
 
                 //calcul des point a l'interieur
-                pointInterieurs.push_back(pointInterieur(rayOrigin, rayDirection, intersectionsVecteur, stepInterieur));
-                intersectionsVecteur.clear();
+#pragma omp critical
+                {
+                    pointInterieurs.push_back(pointInterieur(rayOrigin, rayDirection, intersectionsVecteur, stepInterieur));
+                    intersectionPoints.push_back(rayOrigin);
+                    intersectionPoints.push_back(rayOrigin + rayDirection * (boundingBox.second[2] - boundingBox.first[2] + 2));
+                }
             }
         }
     }
@@ -534,7 +539,7 @@ int main(int argc, char **argv)
         viewer.addLine(intersectionPoints[i], intersectionPoints[i + 1], 0.03);
     }
 
-    //gestion des points interieur/voxels
+    // gestion des points interieur/voxels
     int count = 0;
     int seuil = 1;
 
@@ -542,13 +547,16 @@ int main(int argc, char **argv)
     int tabY = (int)abs(boundingBox.first[1] - boundingBox.second[1]) + 1;
     int tabZ = (int)abs(boundingBox.first[2] - boundingBox.second[2]) + 1;
 
-    int ***voxels = new int**[tabX];
+    int ***voxels = new int **[tabX];
 
-    for(int i = 0; i < tabX;i++){
-        voxels[i] = new int*[tabY];
-        for(int j = 0;j < tabY;j++){
+    for (int i = 0; i < tabX; i++)
+    {
+        voxels[i] = new int *[tabY];
+        for (int j = 0; j < tabY; j++)
+        {
             voxels[i][j] = new int[tabZ];
-            for(int k = 0;k < tabZ;k++){
+            for (int k = 0; k < tabZ; k++)
+            {
                 voxels[i][j][k] = 0;
             }
         }
@@ -566,7 +574,7 @@ int main(int argc, char **argv)
         }
     }
 
-    conservationSurface(voxels,tabX,tabY,tabZ,seuil);
+    conservationSurface(voxels, tabX, tabY, tabZ, seuil);
 
     //todo retrouver offset
     for (int i = 0; i < tabX; i++)
@@ -592,7 +600,7 @@ int main(int argc, char **argv)
         {
             for (uint j = 0; j < pointInterieurs[i].size(); j++)
             {
-                file << "" << pointInterieurs[i][j] << std::endl;
+                file << pointInterieurs[i][j][0] << " " << pointInterieurs[i][j][1] << " " << pointInterieurs[i][j][2] << std::endl;
             }
         }
 
