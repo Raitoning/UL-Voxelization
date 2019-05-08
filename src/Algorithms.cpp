@@ -219,7 +219,7 @@ bool realPointEquals(Viewer3D<>::RealPoint pointA,Viewer3D<>::RealPoint pointB){
     return true;
 }
 
-/*void conservationSurface(int voxels[][][],int a , int b, int c, int seuil){
+void conservationSurface(int ***voxels,int a , int b, int c, int seuil){
     bool keep = false;
     for(int i = 0;i < a;i++){
         for(int j = 0;j < b;j++){
@@ -227,16 +227,21 @@ bool realPointEquals(Viewer3D<>::RealPoint pointA,Viewer3D<>::RealPoint pointB){
                 if(voxels[i][j][k] > seuil){
 
                     for(int i1 = -1; i1 < 2 && !keep ; i1++){
-                        for(int i2 = -1; i2 < 2 && !keep; i2++){
-                            for(int i3 = -1; i3 < 2 && !keep; i3++){
-                                
-                                if( !(i1 ==  0 && i2 == 0 && i3 == 0)){
-                                    if(voxels[i+i1][j+i2][k+i3] < seuil)
-                                        keep = true;
-                                }
+                        if(i1 + i >= 0 && i1 + i < a)
+                            for(int i2 = -1; i2 < 2 && !keep; i2++){
+                                if(i2 + j >= 0 && i2 + j < b)
+                                    for(int i3 = -1; i3 < 2 && !keep; i3++){
+                                        if(i3 + k >= 0 && i3 + k < c)
+                                            if( !(i1 ==  0 && i2 == 0 && i3 == 0)){
+                                                if(voxels[i+i1][j+i2][k+i3] < seuil)
+                                                    keep = true;
+                                            }
+                                        else keep = true;
 
+                                    }
+                                else keep = true;
                             }
-                        }
+                        else keep = true;
                     }
                     if(!keep)
                         voxels[i][j][k] = 0;
@@ -247,7 +252,7 @@ bool realPointEquals(Viewer3D<>::RealPoint pointA,Viewer3D<>::RealPoint pointB){
         }
     }
 
-}*/
+}
 
 std::vector<Viewer3D<>::RealPoint> retirerDouble(std::vector<Viewer3D<>::RealPoint> valeurs){
 

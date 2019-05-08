@@ -536,13 +536,24 @@ int main(int argc, char **argv)
 
     //gestion des points interieur/voxels
     int count = 0;
-    int seuil = 0;
+    int seuil = 1;
 
     int tabX = (int)abs(boundingBox.first[0] - boundingBox.second[0]) + 1;
     int tabY = (int)abs(boundingBox.first[1] - boundingBox.second[1]) + 1;
     int tabZ = (int)abs(boundingBox.first[2] - boundingBox.second[2]) + 1;
 
-    int voxels[tabX][tabY][tabZ] = {};
+    int ***voxels = new int**[tabX];
+
+    for(int i = 0; i < tabX;i++){
+        voxels[i] = new int*[tabY];
+        for(int j = 0;j < tabY;j++){
+            voxels[i][j] = new int[tabZ];
+            for(int k = 0;k < tabZ;k++){
+                voxels[i][j][k] = 0;
+            }
+        }
+    }
+
     //print des points a l'interieur
     for (int g = 0; g < pointInterieurs.size(); g++)
     {
@@ -550,12 +561,13 @@ int main(int argc, char **argv)
         {
             viewer.addCube(pointInterieurs[g][h]);
             //on stock au coordonné g,h,X les points (et leurs nombre d'occurences)
-            voxels[(int)round(pointInterieurs[g][h][0] - boundingBox.first[0])][(int)round(pointInterieurs[g][h][1] - boundingBox.first[1])][(int)round(pointInterieurs[g][h][2] - boundingBox.first[2])] += 1;
+            voxels[(int)(pointInterieurs[g][h][0] - boundingBox.first[0])][(int)(pointInterieurs[g][h][1] - boundingBox.first[1])][(int)(pointInterieurs[g][h][2] - boundingBox.first[2])] += 1;
             count++;
         }
     }
 
-    //conservationSurface(voxels,tabX,tabY,tabZ,seuil);
+    conservationSurface(voxels,tabX,tabY,tabZ,seuil);
+
     //todo retrouver offset
     for (int i = 0; i < tabX; i++)
     {

@@ -41,7 +41,7 @@ vector<Viewer3D<>::RealPoint> pointInterieur(Viewer3D<>::RealPoint origin, Viewe
 
 std::vector<Viewer3D<>::RealPoint> retirerDouble(std::vector<Viewer3D<>::RealPoint> valeurs);
 
-//void conservationSurface(int voxels[][][],int a,int b ,int c, int seuil);
+void conservationSurface(int ***voxels,int a,int b ,int c, int seuil);
 
 // FIXME: Use std::maps instead of homemade functions.
 // bool realPointEquals(Viewer3D<>::RealPoint pointA, Viewer3D<>::RealPoint pointB);
