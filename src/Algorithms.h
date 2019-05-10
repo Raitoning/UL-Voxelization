@@ -37,7 +37,7 @@ bool realPointEquals(Viewer3D<>::RealPoint pointA, Viewer3D<>::RealPoint pointB)
 
 Viewer3D<>::RealPoint createStep(Viewer3D<>::RealPoint dir, double ratioX, double ratioY, double ratioZ);
 
-vector<Viewer3D<>::RealPoint> pointInterieur(Viewer3D<>::RealPoint origin, Viewer3D<>::RealPoint dir, vector<Viewer3D<>::RealPoint> intersects, Viewer3D<>::RealPoint step);
+vector<Viewer3D<>::RealPoint> pointInterieur(Viewer3D<>::RealPoint origin, Viewer3D<>::RealPoint dir, vector<Viewer3D<>::RealPoint> intersects, Viewer3D<>::RealPoint step, std::pair<Viewer3D<>::RealPoint, Viewer3D<>::RealPoint> boundingBox);
 
 std::vector<Viewer3D<>::RealPoint> retirerDouble(std::vector<Viewer3D<>::RealPoint> valeurs);
 

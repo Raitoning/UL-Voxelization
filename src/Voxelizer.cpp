@@ -431,7 +431,7 @@ int main(int argc, char **argv)
                 //calcul des point a l'interieur
 #pragma omp critical
                 {
-                    pointInterieurs.push_back(pointInterieur(rayOrigin, rayDirection, intersectionsVecteur, stepInterieur));
+                    pointInterieurs.push_back(pointInterieur(rayOrigin, rayDirection, intersectionsVecteur, stepInterieur, boundingBox));
                     intersectionPoints.push_back(rayOrigin);
                     intersectionPoints.push_back(rayOrigin + rayDirection * (boundingBox.second[1] - boundingBox.first[1] + 2));
                 }
@@ -471,7 +471,7 @@ int main(int argc, char **argv)
                 //calcul des point a l'interieur
 #pragma omp critical
                 {
-                    pointInterieurs.push_back(pointInterieur(rayOrigin, rayDirection, intersectionsVecteur, stepInterieur));
+                    pointInterieurs.push_back(pointInterieur(rayOrigin, rayDirection, intersectionsVecteur, stepInterieur, boundingBox));
                     intersectionPoints.push_back(rayOrigin);
                     intersectionPoints.push_back(rayOrigin + rayDirection * (boundingBox.second[0] - boundingBox.first[0] + 2));
                 }
@@ -512,7 +512,7 @@ int main(int argc, char **argv)
                 //calcul des point a l'interieur
 #pragma omp critical
                 {
-                    pointInterieurs.push_back(pointInterieur(rayOrigin, rayDirection, intersectionsVecteur, stepInterieur));
+                    pointInterieurs.push_back(pointInterieur(rayOrigin, rayDirection, intersectionsVecteur, stepInterieur, boundingBox));
                     intersectionPoints.push_back(rayOrigin);
                     intersectionPoints.push_back(rayOrigin + rayDirection * (boundingBox.second[2] - boundingBox.first[2] + 2));
                 }
@@ -551,7 +551,7 @@ int main(int argc, char **argv)
 
     // gestion des points interieur/voxels
     int count = 0;
-    int seuil = 1;
+    int seuil = 2;
 
     int tabX = (int)abs(boundingBox.first[0] - boundingBox.second[0]) + 1;
     int tabY = (int)abs(boundingBox.first[1] - boundingBox.second[1]) + 1;
@@ -584,7 +584,7 @@ int main(int argc, char **argv)
         }
     }
 
-    conservationSurface(voxels, tabX, tabY, tabZ, seuil);
+    //conservationSurface(voxels, tabX, tabY, tabZ, seuil);
 
     //todo retrouver offset
     for (int i = 0; i < tabX; i++)

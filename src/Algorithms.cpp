@@ -134,7 +134,7 @@ Viewer3D<>::RealPoint createStep(Viewer3D<>::RealPoint dir, double ratioX, doubl
     return resultat;
 }
 
-vector<Viewer3D<>::RealPoint> pointInterieur(Viewer3D<>::RealPoint origin, Viewer3D<>::RealPoint dir, vector<Viewer3D<>::RealPoint> intersects, Viewer3D<>::RealPoint step){
+vector<Viewer3D<>::RealPoint> pointInterieur(Viewer3D<>::RealPoint origin, Viewer3D<>::RealPoint dir, vector<Viewer3D<>::RealPoint> intersects, Viewer3D<>::RealPoint step, std::pair<Viewer3D<>::RealPoint, Viewer3D<>::RealPoint> boundingBox){
 
     vector<Viewer3D<>::RealPoint> resultat;
     vector<indexation> t;
@@ -153,13 +153,6 @@ vector<Viewer3D<>::RealPoint> pointInterieur(Viewer3D<>::RealPoint origin, Viewe
     sort(t.begin(),t.end());
 
     int count = 0;
-
-    /*if(intersects.size() % 2 == 1){
-        //TODO ajouter bbox
-        //en attendant on retire le dernier element
-        //intersects.pop_back();
-        intersects.push_back(Viewer3D<>::RealPoint(intersects[intersects.size()-1][0] + 2*step[0],intersects[intersects.size()-1][1] + 2*step[1],intersects[intersects.size()-1][2] + 2*step[2]));
-    }*/
 
     //on part de l'origin
     point = origin;
@@ -182,11 +175,25 @@ vector<Viewer3D<>::RealPoint> pointInterieur(Viewer3D<>::RealPoint origin, Viewe
             point = point + step;
         }
 
-        //temps qu'on est dans l'intervalle
+
+        if(count + 1 >= intersects.size()){
+
+            //cas mesh ouvert
+            //alors voxels tans qu'on touche pas la bbox
+            while(boundingBox.first[0] <= point[0] && boundingBox.first[1] <= point[1] && boundingBox.first[2] <= point[2] &&
+             boundingBox.second[0] >= point[0] && boundingBox.second[1] >= point[1] && boundingBox.second[2] >= point[2]){
+                //ajout du point
+                resultat.push_back(point);
+                point = point + step;
+
+            }
+            break;
+        }
+            //temps qu'on est dans l'intervalle
         while( ((!modX && point[0] <= intersects[t[count+1].index][0]) || (modX && point[0] >= intersects[t[count+1].index][0])) &&
-                ((!modY && point[1] <= intersects[t[count+1].index][1]) || (modY && point[1] >= intersects[t[count+1].index][1])) && 
+                 ((!modY && point[1] <= intersects[t[count+1].index][1]) || (modY && point[1] >= intersects[t[count+1].index][1])) && 
                 ((!modZ && point[2] <= intersects[t[count+1].index][2]) || (modZ && point[2] >= intersects[t[count+1].index][2])))
-        {
+            {
             //ajout du point
             resultat.push_back(point);
             point = point + step;
