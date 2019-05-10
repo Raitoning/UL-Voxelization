@@ -427,7 +427,7 @@ int main(int argc, char **argv)
                         intersectionsVecteur.push_back(intersection);
                     }
                 }
-
+                intersectionsVecteur = retirerDouble(intersectionsVecteur);
                 //calcul des point a l'interieur
 #pragma omp critical
                 {
@@ -467,7 +467,7 @@ int main(int argc, char **argv)
                         intersectionsVecteur.push_back(intersection);
                     }
                 }
-
+                intersectionsVecteur = retirerDouble(intersectionsVecteur);
                 //calcul des point a l'interieur
 #pragma omp critical
                 {
@@ -508,7 +508,7 @@ int main(int argc, char **argv)
                         intersectionsVecteur.push_back(intersection);
                     }
                 }
-
+                intersectionsVecteur = retirerDouble(intersectionsVecteur);
                 //calcul des point a l'interieur
 #pragma omp critical
                 {
