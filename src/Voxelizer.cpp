@@ -649,11 +649,24 @@ int main(int argc, char **argv)
 
         if (file.is_open())
         {
-            for (uint i = 0; i < pointInterieurs.size(); i++)
+            /*for (uint i = 0; i < pointInterieurs.size(); i++)
             {
                 for (uint j = 0; j < pointInterieurs[i].size(); j++)
                 {
                     file << pointInterieurs[i][j][0] << " " << pointInterieurs[i][j][1] << " " << pointInterieurs[i][j][2] << std::endl;
+                }
+            }*/
+
+            for (uint i = 0; i < tabX; i++)
+            {
+                for (uint j = 0; j < tabY; j++)
+                {
+                    for (uint k = 0; k < tabZ; k++)
+                    {
+                        if (voxels[i][j][k] > seuil)
+                            file << i << " " << j << " " << k << std::endl;
+                            //viewer.addCube(Z3i::RealPoint(i, j, k));
+                    }
                 }
             }
 
